@@ -1,0 +1,14 @@
+###################### 4 - Beeler-Reuter model
+6,1,9       # number of gate variables, ionic currents, model constants
+1.0e-7      # r_Ca [M*cm^2/nC]
+1.0e-7      # Ca_SR [M]
+0.07        # k_up [1/ms]
+0.35        # A_k1 [uA/cm^2]
+0.8         # A_x1 [uA/cm^2]
+50.0        # V_Na [mV]
+4.0         # g_Na [ms/cm^2]
+0.003       # g_NaC [ms/cm^2]
+0.09        # g_s [ms/cm^2]
+.false.      # rescaled action potential
+-20.0       # v_rest [mV]
+80.0       # v_peak [mV]

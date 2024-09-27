@@ -1,0 +1,19 @@
+###################### CASE
+1          		# number of patches (np)
+.false.    		# read restart (is)
+200        		# step interval to print output (pint)
+100.0         		# [ms] time interval for writing restart files (trest)
+
+
+###################### TISSUE PROPERTIES
+1			# membrane model selector	
+1.0        		# [mF/cm^3] tissue capacity (Cm)
+0.0001     		# [S/cm] isotropic conductivity coefficient (Diso)
+1.0     		# [1/cm] surface-to-volume cell ratio (chi)
+
+
+###################### DYNAMICS PARAMETERS
+0.008     		# [ms] time-step size (dt)
+110.0        		# [ms] runtime (rt)
+
+

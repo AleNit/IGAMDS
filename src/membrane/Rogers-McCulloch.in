@@ -1,0 +1,11 @@
+###################### 3 - Rogers-McCulloch model
+1,0,5       # number of gate variables, ionic currents, model constants
+0.26        # c1
+0.1         # c2
+1.0         # c3
+0.13        # a
+0.013       # b
+.true.      # rescaled action potential
+-80.0       # v_rest [mV]
+20.0       # v_peak [mV]
+

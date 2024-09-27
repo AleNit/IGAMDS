@@ -1,0 +1,11 @@
+###################### Aliev-Panfilov model
+1,0,6       # number of gate variables, ionic currents, model constants
+8.0         # k
+0.01         # a
+0.15         # b
+0.2         # mu1
+0.3         # mu2
+0.002         # eps0
+.true.      # rescaled action potential
+-80.0       # v_rest [mV]
+20.0       # v_peak [mV]
