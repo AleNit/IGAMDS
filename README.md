@@ -9,8 +9,9 @@ The governing equations are the following:
 
 $$ 
 \begin{aligned}
-& C_m \frac{\partial v}{\partial t} - \nabla \cdot \left( \mathbf{D} \nabla v \right) + \chi \ i_{ion}(v,w) = \chi \ i_a \\
-& \frac{dw}{dt}=g(v,w)
+& C_m \frac{\partial v}{\partial t} - \nabla \cdot \left( \mathbf{D} \nabla v \right) + \chi \ i_{ion} = \chi \ i_a \\
+& i_{ion}=f(v,w) \\
+& \frac{dw}{dt}=g(v,w) 
 \end{aligned}
 $$  
 
