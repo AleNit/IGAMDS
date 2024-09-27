@@ -22,7 +22,7 @@ ne=size(tmp,1)-4;
 
 fname=strcat(loc,'../input/modelpar.in');
 fileID=fopen(fname);
-cac=textscan(fileID,'%s','Delimiter','\n');e
+cac=textscan(fileID,'%s','Delimiter','\n');
 fclose(fileID);
 
 splt=strsplit(cac{1}{2});
