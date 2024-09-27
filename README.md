@@ -50,4 +50,8 @@ Linear systems are solved via the MGMRES algorithm provided by John Burkardt, (B
 ./src/: contains the makefile and all the routines to execute the program.  
 ./test_planeslab/: contains the input files for the test case simulating the propagation of the action potential over a plane slab with the Aliev-Panfilov ionic current model. The time-traces of the action potential is verified against data provided in referece https://doi.org/10.1007/s00466-009-0434-z.  
 ./test_spiral/: contains the input files for the test case simulating the trigger of a self-sustained spiral action potential. The Aliev-Panfilov ionic current model is used.  
-./test_cyl/: contains the input files for the test case simulating the propagation of an Aliev-Panfilov action potential over a cylindrical shell. The anisotropic diffusion occurs as a result of the surface geometry.  
+./test_cyl/: contains the input files for the test case simulating the propagation of an Aliev-Panfilov action potential over a cylindrical shell. The anisotropic diffusion occurs as a result of the surface geometry.
+./test_planeslab.mp4: tape showing the action potential contours of the plane slab test.
+./test_cyl.mp4: tape showing the action potential propagation on a cylindrical shell.
+./test_spiral.mp4: tape showing the trigger of a self-sustained spiral wave potential.
+./test_planeslab.png: verification of the action potential time traces against literature data.
