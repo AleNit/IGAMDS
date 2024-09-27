@@ -13,6 +13,7 @@ loc='../test_cyl/out/';         % case output folder
 ns=0;                               % starting file id
 nn=[200,200];                       % points on the surface for the contour representation
 var=1;                              % variable to plot: 1-potential, 2-1st rec. variable, 3-iion, 4-iapp
+wrf=false(1);                       % write frames to file
 
 
 
@@ -47,7 +48,8 @@ end
 
 
 figure(kf); kf=kf+1;
-for n=1:5:ne
+set(gcf,'position',[100,100,700,420])
+for n=1:1:ne
 
     t(n+1) = n*dtfig;    
 
@@ -82,16 +84,24 @@ for n=1:5:ne
     end
 
     colorbar
+    clim([-80,20])    
     axis equal
+    axis([0,1,0,1,0.0,0.3])
     xlabel('x [cm]','FontSize',14,'Interpreter','latex');
     ylabel('y [cm]','FontSize',14,'Interpreter','latex');
     zlabel('z [cm]','FontSize',14,'Interpreter','latex');
-    tit=strcat(titi,', t =',num2str(n*dtfig),' [ms]');
+    tit=strcat(titi,', t =',sprintf('%4.2f',n*dtfig),' [ms]'); 
     title(tit,'FontSize',14,'Interpreter','latex')
-    xticks(0:0.1:1); yticks(0:0.1:1)
+    % xticks(0:0.1:1); yticks(0:0.1:1)
+    view(-12,20)
     drawnow   
     hold off    
     disp(['step ' num2str(n)])
+
+    if (wrf)
+        picname=strcat('./frames/frame_',sprintf('%05d',n));
+        print('-dpng','-r200',picname);                        
+    end       
     
 end
 

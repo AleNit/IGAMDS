@@ -13,6 +13,7 @@ loc='../test_planeslab/out/';         % case output folder
 ns=0;                               % starting file id
 nn=[200,200];                       % points on the surface for the contour representation
 var=1;                              % variable to plot: 1-potential, 2-1st rec. variable, 3-iion, 4-iapp
+wrf=false(1);                       % write frames to file
 
 
 
@@ -47,6 +48,7 @@ end
 
 
 figure(kf); kf=kf+1;
+set(gcf,'position',[100,100,700,420])
 for n=ns:1:ne
 
     t(n+1) = n*dtfig;    
@@ -68,7 +70,7 @@ for n=ns:1:ne
         switch var
             case 1
                 C = create_cont(p(np),q(np),U(:,np),V(:,np),CP(:,:,:,np),CP_pot,nn);                
-                titi='action potential [mV]';
+                titi='action potential [mV]';                
             case 2
                 C = create_cont(p(np),q(np),U(:,np),V(:,np),CP(:,:,:,np),CP_wrec(:,:,1),nn);
                 titi='1st gating variable';
@@ -86,15 +88,22 @@ for n=ns:1:ne
     end
 
     colorbar
+    % clim([-80,20])    
     axis equal
+    % axis([0,2,0,0.2,-0.2,0.2])
     xlabel('x [cm]','FontSize',14,'Interpreter','latex');
     ylabel('y [cm]','FontSize',14,'Interpreter','latex');
     zlabel('z [cm]','FontSize',14,'Interpreter','latex');
-    tit=strcat(titi,', t =',num2str(n*dtfig),' [ms]');
+    tit=strcat(titi,', t =',sprintf('%4.2f',n*dtfig),' [ms]'); 
     title(tit,'FontSize',14,'Interpreter','latex')
     drawnow   
     hold off    
     disp(['step ' num2str(n)])
+
+    if (wrf)
+        picname=strcat('./frames/frame_',sprintf('%05d',n));
+        print('-dpng','-r200',picname);                        
+    end    
     
 end
 
@@ -113,7 +122,7 @@ tx=cac(:,1); vvx=cac(:,2);
 figure(kf); kf=kf+1;
 plot(tx,vvx.*(vpeak-vrest)+vrest,'o')
 hold on
-plot(t,vv,'-')
+plot(t,vv,'-x')
 xlabel('t [ms]','FontSize',14,'Interpreter','latex')
 ylabel('v [mV]','FontSize',14,'Interpreter','latex')
 legend('Gotkepe, Khull (2019)','present work')
