@@ -31,8 +31,12 @@ $$
 
 Details about the methodology and the implementation can be found in the following research papers:  
 https://doi.org/10.1016/j.cma.2021.113877  
-https://doi.org/10.1016/j.cma.2004.10.008   
+https://doi.org/10.1016/j.cma.2004.10.008  
 
+# Dependencies 
+Install the HDF5 library (sudo apt get ), any release from 2015 on.  
+Linear systems are solved via the MGMRES algorithm provided by John Burkardt, (Barrett R. et al., Templates for the Solution of Linear Systems: Building Blocks for Iterative Methods, SIAM, 1994. ISBN: 0898714710, LC: QA297.8.T45.)
+   
 # How to run a test
 1. Create the desired NURBS surface and performs both h-refinement (element insertion) and p-refinement (degree elevation of basis functions) by running the script ./proproc/MAIN_<test_name>.m. This will generate the test folder with the related input files.  
 2. Insert the desired values of physical parameters and select the desired ionic current model via <test_name>/input/modelpar.in.  
