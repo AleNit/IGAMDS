@@ -10,8 +10,8 @@ The governing equations are the following:
 $$ C_m \frac{\partial v}{\partial t} - \nabla \cdot \left( D \nabla v \right) + \chi i_{ion} = \chi i_a \, $$ 
 
 Details about the methodology and the implementation can be found in the following papers:  
-https://doi.org/10.1016/j.cma.2021.113877
-https://doi.org/10.1016/j.cma.2004.10.008
+https://doi.org/10.1016/j.cma.2021.113877 
+https://doi.org/10.1016/j.cma.2004.10.008 
 
 # How to run a test
 1. Create the desired NURBS surface and performs both h-refinement (element insertion) and p-refinement (degree elevation of basis functions) by running the script ./proproc/MAIN_<test_name>.m. This will generate the test folder with the related input files.
