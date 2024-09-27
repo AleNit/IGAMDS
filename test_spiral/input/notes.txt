@@ -1,0 +1,1 @@
+- for this test set the parameter "a" in the Aliev-Panfilov model to: a=0.15 
