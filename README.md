@@ -1,11 +1,14 @@
 # IGAMDS
-Isogeometric solver for the monodomain model (electrophysiological reaction-diffusion system) over NURBS surfaces. The monodomain equation is integrated in space via a NURBS-based isogeometric method, in time via the semi-implicit Crack-Nicholson/Admas-Bashforth scheme. The associated ionic current model is advanced in time via a fourth-order Runge-Kutta scheme. Three possible ionic current models are available: Aliev-Panfilov, Rogers-McCulloch, Beeler-Reuter.
+Isogeometric solver for the monodomain model (electrophysiological reaction-diffusion system) over NURBS surfaces. The monodomain equation is integrated in space via a NURBS-based isogeometric method, in time via the semi-implicit Crack-Nicholson/Admas-Bashforth scheme. Derivative over the surface are computed using the local curvilinear grame defined by the metric tensor. The associated ionic current model is advanced in time via a fourth-order Runge-Kutta scheme. Three possible ionic current models are available: Aliev-Panfilov, Rogers-McCulloch, Beeler-Reuter.
 
 # Developers
 Alessandro Nitti, Polytechnic University of Bari (https://scholar.google.it/citations?user=lv1V6-4AAAAJ&hl=it&oi=ao)  
 
 # Methodology
 The governing equations are the following: 
+
+$$ C_m \frac{\partial v}{\partial t} - \nabla \cdot \left( D \nabla v \right) + \chi i_{ion} = \chi i_a \, $$ 
+
 Details about the methodology and the implementation can be found in the following papers:  
 https://doi.org/10.1016/j.cma.2021.113877
 https://doi.org/10.1016/j.cma.2004.10.008
