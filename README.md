@@ -33,6 +33,8 @@ Details about the methodology and the implementation can be found in the followi
 https://doi.org/10.1016/j.cma.2021.113877  
 https://doi.org/10.1016/j.cma.2004.10.008  
 
+The conducticity tensor is provided in the parametric space, i.e., on Cartesian bases, and than transformed to the local curvilinear bases on the surface.
+
 # Dependencies 
 Install the HDF5 library (sudo apt get ), any release from 2015 on.  
 Linear systems are solved via the MGMRES algorithm provided by John Burkardt, (Barrett R. et al., Templates for the Solution of Linear Systems: Building Blocks for Iterative Methods, SIAM, 1994. ISBN: 0898714710, LC: QA297.8.T45.)
