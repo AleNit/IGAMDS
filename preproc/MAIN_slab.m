@@ -4,14 +4,16 @@
 clc
 clear 
 close all
+addpath('./IGA-quadrature-master/')
 
 
 %% input parameters
 cname='test_planeslab';      % case name
+% cname='test_planeslab_patchwise';      % case name
 wrt=true(1);                   % create input folder
 fname=strcat('../',cname,'/input/igeo_p1.txt');   % gemetry file name
 
-% initial geometry
+% surface geometry
 p=1; 
 q=1;
 U=[0 0 1 1];
@@ -21,6 +23,12 @@ CP(:,:,2)=[0.0,0.2; 0.0,0.2];
 CP(:,:,3)=[0.0,0.0; 0.0,0.0];
 CP(:,:,4)=[1.0,1.0; 1.0,1.0];
 
+% patchwise integration parameters
+over = 0; order = 3; regularity = 1;
+disp(['in case of patchwise integration'])
+disp(['estimated quadrature points per element: ',num2str(((order-regularity)/2)^2)])
+
+% plot initial geometry
 figure(1)
 el=true(1);                 % plot element boundaries
 conp=true(1);               % plot control polygon
@@ -42,11 +50,16 @@ Rv = refinement_vec(V,refv);
 nu = length(CP(:,1,1));
 nv = length(CP(1,:,1));
 
+% compute quadrature points parameters
+[IPu,IPv,nqpu,nqpv] = patchwise_int(U,V,CP,over,order,regularity);
+
+% plot refined geometry
 figure(2)
 el=true(1);                 % plot element boundaries
 conp=false(1);               % plot control polygon
 plotNURBSsurf(p,q,U,V,CP,el,conp)
 title('refined surface','FontSize',14,'Interpreter','latex')
+
 
 
 %% write to output file
@@ -60,6 +73,10 @@ if (wrt)
 
     % write geometry to file
     writesurf2file(fname,p,q,U,V,CP)
+
+    % quadrature point data to file
+    fname=strcat('../',cname,'/input/qp_p1.in');
+    writeqp2file(fname,IPu,IPv,nqpu,nqpv)
 
     % copy template input files
     dest=strcat('../',cname,'/go');
