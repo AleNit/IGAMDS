@@ -3,7 +3,7 @@
 
       USE refinement
       USE metrics
-      USE boundary_conditions
+      USE bcs
 
       integer :: n_patches
       integer :: cp_u, cp_v, ndof_c, ndof_old
@@ -45,25 +45,29 @@
       
      !It assemble the linear mass matrix  
       
-      SUBROUTINE mass_mat_ass(pa,np)
+      SUBROUTINE mass_mat_ass(pa,np,VA,IA,JA,nd)
 
       implicit none
      !----------------------------------------------------------
       type(multipatch), intent(inout) :: pa
-      integer, intent(in) :: np
+      integer, intent(in) :: np,nd
+      real, intent(out) :: VA(nd)
+      integer, dimension(nd), intent(out) :: IA,JA
      !----------------------------------------------------------
       integer :: i, j, k, cpi, cpj, kei, kej
+      integer :: ii,jj,c,tmp(2),ind
       integer :: config
      !----------------------------------------------------------
 
       config=1
+      c=0
 
       do j=1, pa%refv 
         if (pa%v(pa%qr+j+1)/=pa%v(pa%qr+j)) then
           do i=1, pa%refu
             if (pa%u(pa%pr+i+1)/=pa%u(pa%pr+i)) then
-
-              mass_mat_e=0.0
+      
+             mass_mat_e=0.0
 
               call e_mass_mat(i,j,pa,config)
 
@@ -79,9 +83,20 @@
 
               do kei=1, ndof_e
                 do kej=1, ndof_e
-                  pa%mass_mat(dof_loc(kei),dof_loc(kej))=&
-                  mass_mat_e(kei,kej)+&
-                  pa%mass_mat(dof_loc(kei),dof_loc(kej))
+                        
+!                 !full matrix assembly
+!                  pa%mass_mat(dof_loc(kei),dof_loc(kej))=&
+!                  mass_mat_e(kei,kej)+&
+!                  pa%mass_mat(dof_loc(kei),dof_loc(kej))
+
+                 !matrix assembly in COO format 
+                  ii = dof_loc(kei)
+                  jj = dof_loc(kej)
+                  CALL indint(ind,c,nd,IA,JA,ii,jj)
+                  IA(ind) = ii
+                  JA(ind) = jj
+                  VA(ind) = VA(ind) + mass_mat_e(kei,kej)
+
                 enddo
               enddo
 
@@ -97,17 +112,22 @@
 
      !It assemble the linear stiffness matrix 
       
-      SUBROUTINE stiff_mat_ass(pa,np,co)
+      SUBROUTINE stiff_mat_ass(pa,np,VA,IA,JA,nd)
 
       implicit none
      !----------------------------------------------------------
       type(multipatch), intent(inout) :: pa
-      integer, intent(in) :: co, np
+      integer, intent(in) :: np, nd
+      real, intent(out) :: VA(nd)
+      integer, intent(out) :: IA(nd),JA(nd)      
      !----------------------------------------------------------
       integer :: i, j, k, cpi, cpj, kei, kej
+      integer :: ii,jj,c,tmp(2),ind,co
       real, dimension(pa%cp_u*pa%cp_v,3) :: cplin
      !----------------------------------------------------------
 
+      co=1
+      c=0
       
       do j=1, pa%refv 
         if (pa%v(pa%qr+j+1)/=pa%v(pa%qr+j)) then
@@ -130,10 +150,21 @@
 
               do kei=1, ndof_e
                 do kej=1, ndof_e
-                  pa%stiff_mat(dof_loc(kei),dof_loc(kej))=&
-                  stiff_mat_e(kei,kej)+&
-                  pa%stiff_mat(dof_loc(kei),dof_loc(kej))
-                enddo
+
+!                 !full matrix assembly
+!                  pa%stiff_mat(dof_loc(kei),dof_loc(kej))=&
+!                  stiff_mat_e(kei,kej)+&
+!                  pa%stiff_mat(dof_loc(kei),dof_loc(kej))
+
+                 !matrix assembly in COO format 
+                  ii = dof_loc(kei)
+                  jj = dof_loc(kej)
+                  CALL indint(ind,c,nd,IA,JA,ii,jj)
+                  IA(ind) = ii
+                  JA(ind) = jj
+                  VA(ind) = VA(ind) + stiff_mat_e(kei,kej)
+
+               enddo
               enddo
 
             endif
@@ -262,106 +293,6 @@
 
 
       ENDMODULE
-
-     !===================================================== 
-
-     !provide arrays for the Compressed Sparse Row (CSR) representation
-     !of the input matrix
-
-      SUBROUTINE CRSarr(n,nnz,A,Aa,IA,JA)
-
-      implicit none
-     !----------------------------------------------------- 
-      integer, intent(in) :: n, nnz
-      real, intent(in) :: A(n,n)
-      integer, intent(out) :: IA(n+1), JA(nnz)
-      real, intent(out) :: Aa(nnz)
-     !----------------------------------------------------- 
-      integer :: i, j, k, kk, nnzj
-     !----------------------------------------------------- 
-
-      k=1
-      kk=1
-      IA(1)=1
-      nnzj=0
-      do i=1, n
-        do j=1, n
-          if (A(i,j)/=0.0) then
-            Aa(k)=A(i,j)
-            JA(k)=j
-            nnzj=nnzj+1
-            k=k+1
-          endif
-        enddo
-        IA(kk+1)=IA(kk)+nnzj
-        kk=kk+1
-        nnzj=0
-      enddo
-
-
-      ENDSUBROUTINE
-
-     !===================================================== 
-
-      SUBROUTINE amux ( n, x, y, a, ja, ia )
-      
-      !*****************************************************************************80
-      !
-      !! AMUX multiplies a CSR matrix A times a vector.
-      !
-      !  Discussion:
-      !
-      !    This routine multiplies a matrix by a vector using the dot product form.
-      !    Matrix A is stored in compressed sparse row storage.
-      !
-      !  Modified:
-      !
-      !    07 January 2004
-      !
-      !  Author:
-      !
-      !    Youcef Saad
-      !
-      !  Parameters:
-      !
-      !    Input, integer ( kind = 4 ) N, the row dimension of the matrix.
-      !
-      !    Input, real X(*), and array of length equal to the column dimension 
-      !    of A.
-      !
-      !    Input, real A(*), integer ( kind = 4 ) JA(*), IA(NROW+1), the matrix in CSR
-      !    Compressed Sparse Row format.
-      !
-      !    Output, real Y(N), the product A * X.
-      !
-        implicit none
-      
-        integer :: n
-      
-        real ::  a(*)
-        integer :: i
-        integer :: ia(*)
-        integer :: ja(*)
-        integer :: k
-        real ::  t
-        real ::  x(*)
-        real ::  y(n)
-      
-        do i = 1, n
-      
-          t = 0.0D+00
-          do k = ia(i), ia(i+1)-1
-            t = t + a(k) * x(ja(k))
-          end do
-      
-          y(i) = t
-      
-        end do
-      
-      ENDSUBROUTINE
-
-     !===================================================== 
-
 
 
 

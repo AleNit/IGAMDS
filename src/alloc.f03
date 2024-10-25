@@ -68,7 +68,7 @@
       SUBROUTINE alloc(patch,m,nw,nc)
 
       USE refinement
-      USE boundary_conditions
+      USE bcs
       USE std_mat_assembly
 
       implicit none
@@ -82,8 +82,8 @@
 
       do i=1, n_patches
         
-        allocate(patch(i)%mass_mat(ndof(i),ndof(i)))
-        allocate(patch(i)%stiff_mat(ndof(i),ndof(i)))
+!        allocate(patch(i)%mass_mat(ndof(i),ndof(i)))
+!        allocate(patch(i)%stiff_mat(ndof(i),ndof(i)))
         
         allocate(patch(i)%pot_n(ndof(i)));      patch(i)%pot_n=0.0
         allocate(patch(i)%vel_n(ndof(i)));      patch(i)%vel_n=0.0      
@@ -103,8 +103,8 @@
       allocate(mass_mat_e(ndof_e,ndof_e))
       allocate(Ke(ndof_e,ndof_e))
       
-      allocate(stiff_mat_tot(ndof_tot,ndof_tot))
-      allocate(mass_mat_tot(ndof_tot,ndof_tot))
+!      allocate(stiff_mat_tot(ndof_tot,ndof_tot))
+!      allocate(mass_mat_tot(ndof_tot,ndof_tot))
       
       allocate(pot_tot_0(ndof_tot))
       allocate(vel_tot_0(ndof_tot))

@@ -1,7 +1,11 @@
       MODULE refinement
      
       USE utilities
-    
+
+      integer, dimension(:), allocatable :: ngpu_pi, ngpv_pi
+      real, dimension(:), allocatable :: un_pi,vn_pi,gwu_pi,gwv_pi
+
+
       type multipatch
     
         integer :: p, q, qr, pr, du, dv, cp_u, cp_v, cp_u_r, cp_v_r
@@ -15,10 +19,13 @@
         real, dimension(:,:), allocatable :: emap
         real, dimension(:,:), allocatable :: NC_u, NC_v
         real, dimension(:,:), allocatable :: Gw
-        
+      
+        real, dimension(:,:,:), allocatable :: R_s_pi    
+        real, dimension(:,:,:,:), allocatable :: dR_s_pi
         real, dimension(:,:,:,:,:), allocatable :: R_s
         real, dimension(:,:,:,:,:,:), allocatable :: dR_s, ddR_s
         
+        real, dimension(:,:), allocatable :: dA_pi
         real, dimension(:,:,:,:,:), allocatable :: lg3_s
         real, dimension(:,:,:,:,:,:), allocatable :: g3_s, n_s, Gab_s
         real, dimension(:,:,:,:,:,:,:), allocatable :: G_s, Gc_s

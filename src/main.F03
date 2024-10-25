@@ -35,7 +35,6 @@
 !
 !     Libreries needed:
 !     HDF5, any release      
-!     Lapack 3.6.0,  BLAS 3.6.0
 !
 !--------------------------------------------------------------------
 
@@ -45,7 +44,7 @@
       USE utilities
       USE refinement
       USE metrics
-      USE boundary_conditions
+      USE bcs
       USE std_mat_assembly
       USE postprocessing
       USE stimprot
@@ -60,7 +59,7 @@
       integer :: iitr, eitr, nnz, itt, pint 
 
       logical :: dir_e, verb, scalev
-      logical :: mp, isr
+      logical :: mp, isr, redint
 
       real :: t_start, t_finish           
       real :: dt, time, tfin 
@@ -71,15 +70,16 @@
       
       real, dimension(50) :: modc
 
-      real, dimension(:), allocatable :: RHS,LHS_CSR,RHSmat_CSR,mass_CSR,stiff_CSR
-      integer, dimension(:), allocatable :: IA, JA
+      real, dimension(:), allocatable :: RHS,LHS_CSR,RHSmat_CSR
+      real, dimension(:), allocatable :: mass_CSR,stiff_CSR,VACOO
+      integer, dimension(:), allocatable :: IA,JA,IACOO,JACOO
 
       character(50) :: newdir
       character(16) :: dir_g
       character(1) :: patch_ID
 
       type (multipatch), dimension(:), allocatable :: patch
-     !---------------------------------------------------------- 
+    !---------------------------------------------------------- 
 
       
       CALL cpu_time(t_start)
@@ -102,7 +102,7 @@
 
      !read input parameters 
       CALL read_input_par(mp,isr,np,Cm,mmod,Diso,chi,dt,tfin,     &
-                          pint,trest)
+                          pint,trest,redint)
 
       
      !read membrane model data       
@@ -145,11 +145,15 @@
       allocate(patch(n_patches), ndof(n_patches))
 
       do i=1, n_patches
+        
         CALL read_geometry_refined(patch(i),i)
         patch(i)%pr=patch(i)%p
         patch(i)%qr=patch(i)%q
         patch(i)%refu=patch(i)%cp_u-patch(i)%pr
         patch(i)%refv=patch(i)%cp_v-patch(i)%qr
+
+        CALL read_patchwise_int     ! this must be adapted to multipatch treatment!
+
       enddo
 
       ne=(patch(1)%pr+1)*(patch(1)%qr+1)    !basis function per element
@@ -233,33 +237,24 @@
 
      !########################  MASS MATRIX
       write(*,*)
-      write(*,*) '... assembling mass matrix'  
+      write(*,*) '... assembling mass matrix in COO format'  
 
 
      !mass matrix assembly
-      mass_mat_tot=0.0
-      do i=1, n_patches
-        CALL mass_mat_ass(patch(i),i)
-      enddo
+      k=ne**2*patch(1)%refu*patch(1)%refv
+      allocate(VACOO(k));     VACOO=0.0
+      allocate(IACOO(k),JACOO(k));    IACOO=0; JACOO=0
 
-      k=0
-      do i=1, n_patches
-        mass_mat_tot(k+1:k+ndof(i),k+1:k+ndof(i))=patch(i)%mass_mat
-        k=k+ndof(i)
-      enddo
+      CALL mass_mat_ass(patch(1),1,VACOO,IACOO,JACOO,k)      !multipatch treatment is temporary disabled
+      
+      write(*,*)
+      write(*,*) '... moving mass matrix to CSR format'  
 
-     !store the matrix in CSR format! 
-      nnz=count(mass_mat_tot/=0.0)
-  
+      nnz=count(JACOO/=0)
       allocate(mass_CSR(nnz))
       allocate(IA(ndof_tot+1), JA(nnz))
 
-      CALL CRSarr(ndof_tot,nnz,mass_mat_tot,mass_CSR,IA,JA)
-
-      do i=1, n_patches
-        deallocate(patch(i)%mass_mat)
-      enddo
-      deallocate(mass_mat_tot)
+      CALL COO2CSR(k,ndof_tot,nnz,VACOO,IACOO,JACOO,mass_CSR,IA,JA)
 
 
 
@@ -289,7 +284,6 @@
 
         Iion_tot_0=0.0
         Iapp_tot_0=0.0
-        stiff_mat_tot=0.0
   
   
         k=0
@@ -358,31 +352,23 @@
 
      !########################  STIFFNESS MATRIX
       write(*,*)
-      write(*,*) '... assemling stiffness matrix'  
+      write(*,*) '... assemling stiffness matrix in COO format'  
 
-     !asseble stiffness matrix
-      config=1
-      do i=1, n_patches
-        patch(i)%stiff_mat=0.0
-        CALL stiff_mat_ass(patch(i),i,config)
-      enddo
-  
-      k=0
-      do i=1, n_patches
-        stiff_mat_tot(k+1:k+ndof(i),k+1:k+ndof(i))=patch(i)%stiff_mat
-        k=k+ndof(i)
-      enddo
+     !stiffness matrix assembly
+      k=ne**2*patch(1)%refu*patch(1)%refv
+      VACOO=0.0
+      IACOO=0; JACOO=0
+
+      CALL stiff_mat_ass(patch(1),1,VACOO,IACOO,JACOO,k)      !multipatch treatment is temporary disabled
+      
+      write(*,*)
+      write(*,*) '... moving stiffness matrix to CSR format'  
 
       allocate(stiff_CSR(nnz))
-      allocate(LHS_CSR(nnz))
-      allocate(RHSmat_CSR(nnz))
 
-      CALL CRSarr(ndof_tot,nnz,stiff_mat_tot,stiff_CSR,IA,JA)
-
-      do i=1, n_patches
-        deallocate(patch(i)%stiff_mat)
-      enddo
-      deallocate(stiff_mat_tot)
+      CALL COO2CSR(k,ndof_tot,nnz,VACOO,IACOO,JACOO,stiff_CSR,IA,JA)
+      
+      deallocate(VACOO,IACOO,JACOO)
 
 
 
@@ -391,12 +377,13 @@
      !############################ LHS and RHS 
       write(*,*)
       write(*,*) '... generating LHS and static part of the RHS in CSR format'  
+      
+      allocate(LHS_CSR(nnz),RHSmat_CSR(nnz))
 
       LHS_CSR=Cm/dt*mass_CSR+0.5*stiff_CSR
       RHSmat_CSR=Cm/dt*mass_CSR-0.5*stiff_CSR
 
       deallocate(stiff_CSR,mass_CSR) 
-
 
 
      !assign tolerances and iteration limits for the mgmres solver
@@ -531,10 +518,14 @@
 
 
        !integrate ionic current
-        config=1 
+        config=1         
         do i=1, n_patches
           patch(i)%Iion_n=0.0
-          CALL ICSVI(config,patch(i),mmod,nmodc,modc,ncc,nww)
+          if (redint) then  
+            CALL ICSVI_patchwise(config,patch(i),mmod,nmodc,modc,ncc,nww)  
+          else
+            CALL ICSVI(config,patch(i),mmod,nmodc,modc,ncc,nww)
+          endif  
         enddo
   
         k=0
@@ -548,14 +539,14 @@
         CALL amux(ndof_tot,pot_tot_n,RHS,RHSmat_CSR,JA,IA)
         RHS=RHS-0.5*chi*Iion_tot_nm1+1.5*chi*Iion_tot_n+chi*Iapp_tot_n
 
-      
+
        !solve linear system (iterative solver)
         verb=.false.
         pot_tot_np1=pot_tot_n  !initial guess
         CALL pmgmres_ilu_cr(ndof_tot,nnz,IA,JA,LHS_CSR,pot_tot_np1,  &
                RHS,iitr,eitr,tol_abs,tol_rel,resid,itt,verb)
-  
-  
+
+
        !retrieve potential time derivative
         vel_tot_np1=(pot_tot_np1-pot_tot_n)/dt
   

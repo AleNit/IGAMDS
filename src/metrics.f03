@@ -32,7 +32,7 @@
      !----------------------------------------------------------
       type(multipatch), intent(inout) :: pa 
      !----------------------------------------------------------
-      integer :: i, j, ku, kv, ru, rv, k
+      integer :: i, j, ku, kv, ru, rv, k, ki, kj, ii, jj
       real :: map, un, vn
       real, dimension(4,pa%pr+1) :: BSb_u 
       real, dimension(4,pa%qr+1) :: BSb_v
@@ -50,16 +50,25 @@
       allocate(pa%R_s(ru,rv,n_gpu,n_gpv,ne))
       allocate(pa%dR_s(ru,rv,n_gpu,n_gpv,ne,2))
       allocate(pa%ddR_s(ru,rv,n_gpu,n_gpv,ne,3))
+
+     !allocate storage matricx of basis functions needed for patchwise integration
+      kj=sum(ngpv_pi)
+      ki=sum(ngpu_pi)
+      allocate(pa%R_s_pi(ki,kj,ne))
+      allocate(pa%dR_s_pi(ki,kj,ne,2))
+      allocate(pa%dA_pi(ki,kj))
       
       do j=pa%qr+1, size(pa%v)-pa%qr-1
         do i=pa%pr+1, size(pa%u)-pa%pr-1
           if (pa%u(i+1)/=pa%u(i)) then
           if (pa%v(j+1)/=pa%v(j)) then
 
-           !element map (Jacobian) from parent space to index space
+           !element map (Jacobian)
             map=(pa%u(i+1)-pa%u(i))*(pa%v(j+1)-pa%v(j))/4.0
             pa%emap(i-pa%pr,j-pa%qr)=map
 
+
+           !for standard Gauss-Legendre quadrature 
             do kv=1, n_gpv
               do ku=1, n_gpu
 
@@ -72,7 +81,7 @@
 
                 call NURBS_basis(i,j,BSb_u,BSb_v,pa)
 
-               !fill NURBS derivatives storage matrices
+               !fill NURBS derivative storage matrices
                 pa%NC_u(i-pa%pr,ku)=un
                 pa%NC_v(j-pa%qr,kv)=vn
                 pa%R_s(i-pa%pr,j-pa%qr,ku,kv,:)=R
@@ -81,6 +90,32 @@
 
               enddo
             enddo
+
+
+           !for reduced (patchwise) quadrature
+            ii=i-pa%pr
+            jj=j-pa%qr
+            do kv=1, ngpv_pi(jj) 
+              do ku=1, ngpu_pi(ii)
+
+                ki=sum(ngpu_pi(1:ii-1))+ku
+                kj=sum(ngpv_pi(1:jj-1))+kv
+
+                un=un_pi(ki)
+                vn=vn_pi(kj)
+            
+                call bspline_basis(i,pa%pr,un,pa%u,size(pa%u),BSb_u)
+                call bspline_basis(j,pa%qr,vn,pa%v,size(pa%v),BSb_v)
+
+                call NURBS_basis(i,j,BSb_u,BSb_v,pa)
+
+               !fill NURBS derivative storage matrices
+                pa%R_s_pi(ki,kj,:)=R
+                pa%dR_s_pi(ki,kj,:,:)=dR
+
+              enddo
+            enddo
+
 
           endif
           endif
@@ -116,13 +151,15 @@
       integer, intent(in) :: co
       real, dimension(pa%cp_u,pa%cp_v,4), intent(in) :: cpp
      !----------------------------------------------------------
-      integer :: i, j, k, a, b, c, ku, kv
+      integer :: i, j, k, a, b, c, ku, kv, ki,kj
      !----------------------------------------------------------
       
       do j=1, pa%refv
         do i=1, pa%refu
           if (pa%u(pa%pr+i+1)/=pa%u(pa%pr+i)) then
           if (pa%v(pa%qr+j+1)/=pa%v(pa%qr+j)) then
+            
+
             do kv=1, n_gpv
               do ku=1, n_gpu
        
@@ -173,6 +210,39 @@
                 
               enddo
             enddo
+          
+
+           !for reduced (patchwise) quadrature
+            do kv=1, ngpv_pi(j) 
+              do ku=1, ngpu_pi(i)
+
+                ki=sum(ngpu_pi(1:i-1))+ku
+                kj=sum(ngpv_pi(1:j-1))+kv
+
+                G=0.0
+                k=0
+                do c=0, pa%qr
+                  do b=0, pa%pr
+                    k=k+1
+                    do a=1, 3
+                      G(a,:)=pa%dR_s_pi(ki,kj,k,:)*cpp(i+b,j+c,a)+G(a,:)
+                    enddo
+                  enddo
+                enddo
+
+               !basis vector g3
+                CALL cross (G(:,1),G(:,2),g3)
+
+               !length of g3 (= area dA)
+                lg3=sqrt(dot_product(g3,g3))
+           
+               !fill NURBS derivative storage matrices
+                pa%dA_pi(ki,kj)=lg3
+
+              enddo
+            enddo
+
+
           endif
           endif
         enddo

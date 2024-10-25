@@ -204,11 +204,11 @@
      !It reads simulation parameters in input
            
       SUBROUTINE read_input_par(mp,is,np,Cm,mmod,       &
-                             Diso,chi,dt,rt,pint,trest)
+                         Diso,chi,dt,rt,pint,trest,redint)
       
       implicit none
      !----------------------------------------------------------
-      logical, intent(out) :: mp, is
+      logical, intent(out) :: mp, is, redint
       integer, intent(out) :: np, pint, mmod
       real, intent(out) :: Cm, Diso, chi, dt, rt
       real, intent(out) :: trest
@@ -234,6 +234,7 @@
       do i=1, 3; read(87,*); enddo
       read(87,*) dt 
       read(87,*) rt
+      read(87,*) redint
    
       close(87)
 
@@ -242,6 +243,10 @@
         mp=.false.
       else
         mp=.true.
+        write(*,*)
+        write(*,*) '... the multipatch option is temporary not available'
+        write(*,*)
+        stop
       endif
 
 
@@ -301,5 +306,4 @@
 
      !============================================================
 
- 
 

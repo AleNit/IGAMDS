@@ -27,7 +27,7 @@ LIB +=  -L/usr/lib/x86_64-linux-gnu/hdf5/serial/ -lz -lhdf5_fortran -lhdf5 -ldl
 INCL = -I/usr/include/hdf5/serial/
 
 OBJS = utilities.o mgmres.o refinement.o metrics.o bcs.o \
-       std_mat.o alloc.o postpr.o solgw.o
+       std_mat.o alloc.o postpr.o solgw.o CSR.o
 
 default: executable 
 
@@ -48,6 +48,9 @@ executable:
 
 utilities.o: utilities.f03
 	$(FC) $(FFLAGS) -c utilities.f03
+
+CSR.o: CSR.f03
+	$(FC) $(FFLAGS) -c CSR.f03
 
 mgmres.o: mgmres.f90
 	$(FC) $(FFLAGS) -c mgmres.f90

@@ -1,5 +1,5 @@
       
-      MODULE boundary_conditions
+      MODULE bcs
 
       USE refinement
       USE utilities
@@ -32,6 +32,7 @@
       real, dimension(:,:), allocatable :: f_n
      !----------------------------------------------------------
 
+
       allocate(f_n(pa%cp_u,pa%cp_v)); f_n=0.0
 
       do j=1, pa%refv    
@@ -61,7 +62,6 @@
 
                   CALL Iioneval(vv,ww,Iint,mmod,nmodc,modc,nc,nw)
 
-
                   k=0
                   do c=1, pa%qr+1
                     do b=1, pa%pr+1
@@ -74,7 +74,7 @@
 
                 enddo
               enddo
-            
+
             endif
           enddo
         endif
@@ -94,6 +94,95 @@
       ENDSUBROUTINE 
       
      !====================================================================
+
+     !Integrate ionic current over the computational domain by a 
+     !State Variable Interpolation (SVI) method
+     !A patchwise integration is adopted
+
+      SUBROUTINE ICSVI_patchwise(co,pa,mmod,nmodc,modc,nc,nw)
+
+      implicit none
+     !----------------------------------------------------------
+      integer, intent(in) :: co, mmod, nmodc, nc, nw
+      real, dimension(50), intent(in) :: modc
+      type(multipatch), intent(inout) :: pa
+     !----------------------------------------------------------
+      integer :: i, j, k, j1, j2, i1, i2, b, c, idir, ku, kv, n 
+      integer :: ki, kj
+      real :: dA, map, gwl, ww(nc+nw), vv
+      real :: un, vn, Iint
+      real, dimension(pa%pr+1,pa%qr+1) :: f_el
+      real, dimension(:,:), allocatable :: f_n
+      real, dimension(ne) :: BFV
+     !----------------------------------------------------------
+
+
+      allocate(f_n(pa%cp_u,pa%cp_v)); f_n=0.0
+
+
+      do j=1, pa%refv    
+        if (pa%v(pa%qr+j+1)/=pa%v(pa%qr+j)) then
+          do i=1, pa%refu 
+            if (pa%u(pa%pr+i+1)/=pa%u(pa%pr+i)) then
+
+              map=pa%emap(i,j)
+
+              do kv=1, ngpv_pi(j)
+                do ku=1, ngpu_pi(i)
+
+                  ki=sum(ngpu_pi(1:i-1))+ku
+                  kj=sum(ngpv_pi(1:j-1))+kv
+                  
+                  dA=pa%dA_pi(ki,kj)
+                  gwl=gwu_pi(ki)*gwv_pi(kj)
+                  un=un_pi(ki)
+                  vn=vn_pi(kj)
+                 
+                 !state variables interpolation 
+                  do n=1, nc+nw
+                    CALL get_point_eval(vv,ww(n),un,vn,pa%cp,       &
+                            pa%cp_pot_n,pa%cp_wrec_n(:,:,n),pa)
+                  enddo
+
+                  CALL Iioneval(vv,ww,Iint,mmod,nmodc,modc,nc,nw)
+
+                 !retrieve basis function 
+                  BFV=pa%R_s_pi(ki,kj,:)
+
+                  k=0
+                  do c=1, pa%qr+1
+                    do b=1, pa%pr+1
+                      k=k+1
+                      f_el(b,c)=Iint*gwl*BFV(k)*dA
+                   enddo
+                  enddo
+
+                  f_n(i:i+pa%pr,j:j+pa%qr)=f_n(i:i+pa%pr,j:j+pa%qr)+f_el
+
+                enddo
+              enddo
+
+            endif
+          enddo
+        endif
+      enddo
+
+
+     !store all nodal force components in a 1D array 
+      k=1
+      do j=1, pa%cp_v
+        do i=1, pa%cp_u
+          pa%Iion_n(k)=f_n(i,j)+pa%Iion_n(k)
+          k=k+1
+        enddo
+      enddo
+      
+
+      deallocate(f_n)
+
+      ENDSUBROUTINE 
+     
+     !=========================================================
 
       SUBROUTINE areastim(F,ub,vb,co,pa)
 
@@ -412,6 +501,48 @@
      
      !====================================================================
 
-      ENDMODULE
+      SUBROUTINE read_patchwise_int
 
+      implicit none
+     !------------------------------------------------------------
+      integer :: i,neu,nev,ngpu,ngpv
+     !------------------------------------------------------------
+
+      open(87,file='./input/qp_p1.in',status="old",action="read")    
+
+      read(87,*) neu
+      allocate(ngpu_pi(neu))
+      do i=1,neu
+        read(87,*) ngpu_pi(i)
+      enddo
+      read(87,*)
+      read(87,*) ngpu
+      allocate(un_pi(ngpu),gwu_pi(ngpu))
+      do i=1,ngpu
+        read(87,*) un_pi(i),gwu_pi(i)
+      enddo
+      read(87,*)
+
+
+      read(87,*) nev
+      allocate(ngpv_pi(nev))
+      do i=1,nev
+        read(87,*) ngpv_pi(i)
+      enddo
+      read(87,*)
+      read(87,*) ngpv
+      allocate(vn_pi(ngpv),gwv_pi(ngpv))
+      do i=1,ngpv
+        read(87,*) vn_pi(i),gwv_pi(i)
+      enddo
+
+
+      close(87)
+ 
+      ENDSUBROUTINE
+
+     !============================================================
+
+
+      ENDMODULE
 
