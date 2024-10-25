@@ -15,5 +15,6 @@
 ###################### DYNAMICS PARAMETERS
 0.008     		# [ms] time-step size (dt)
 110.0        		# [ms] runtime (rt)
+.false.			# reduced patchwise integration on reactive terms (redint)
 
 
