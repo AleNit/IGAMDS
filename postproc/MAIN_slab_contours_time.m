@@ -10,6 +10,7 @@ kf=1;
 
 %% input parameters
 loc='../test_planeslab/out/';         % case output folder
+% loc='../test_planeslab_patchwise/out/';         % case output folder
 ns=0;                               % starting file id
 nn=[200,200];                       % points on the surface for the contour representation
 var=1;                              % variable to plot: 1-potential, 2-1st rec. variable, 3-iion, 4-iapp
@@ -64,6 +65,7 @@ for n=ns:1:ne
 
         if (np==1)
             vv(n+1) = get_point_eval(p(np),0.3,U(:,np),q(np),0.5,V(:,np),CP(:,:,:,np),CP_pot);
+            iion(n+1) = get_point_eval(p(np),0.3,U(:,np),q(np),0.5,V(:,np),CP(:,:,:,np),CP_ii);
         end
        
         % evaluate potential on a subgrid to get a smooth scalar field
@@ -76,10 +78,10 @@ for n=ns:1:ne
                 titi='1st gating variable';
             case 3
                 C = create_cont(p(np),q(np),U(:,np),V(:,np),CP(:,:,:,np),CP_ii,nn);
-                titi='ionic current [mA/cm^2]';
+                titi='ionic current [mA/cm$^2$]';
             case 4
                 C = create_cont(p(np),q(np),U(:,np),V(:,np),CP(:,:,:,np),CP_ia,nn);
-                titi='applied current [mA/cm^2]';
+                titi='applied current [mA/cm$^2$]';
         end
 
         surf(X(:,:,np),Y(:,:,np),Z(:,:,np),C,'EdgeColor','none')
@@ -126,3 +128,12 @@ plot(t,vv,'-x')
 xlabel('t [ms]','FontSize',14,'Interpreter','latex')
 ylabel('v [mV]','FontSize',14,'Interpreter','latex')
 legend('Gotkepe, Khull (2019)','present work')
+
+
+
+%% plot ionic current
+figure(kf); kf=kf+1;
+plot(t,iion,'-^')
+hold on
+xlabel('t [ms]','FontSize',14,'Interpreter','latex')
+ylabel('$i_{ion}$ [mA/cm$^2$]','FontSize',14,'Interpreter','latex')
