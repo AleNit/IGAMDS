@@ -1,5 +1,8 @@
 # IGAMDS
-Isogeometric solver for the monodomain model (electrophysiological reaction-diffusion system) over NURBS surfaces. The monodomain equation is integrated in space via a NURBS-based isogeometric method, in time via the semi-implicit Crank-Nicholson/Admas-Bashforth scheme. Derivatives over the surface are computed using the local curvilinear frame defined by the metric tensor. The associated ionic current model is advanced in time via a fourth-order Runge-Kutta scheme. Three possible ionic current models are available: Aliev-Panfilov (Aliev, R. R., & Panfilov, A. V. (1996). A simple two-variable model of cardiac excitation. Chaos, Solitons & Fractals, 7(3), 293-301.), Rogers-McCulloch (Rogers, J. M., & McCulloch, A. D. (1994). A collocation-Galerkin finite element model of cardiac action potential propagation. IEEE Transactions on Biomedical Engineering, 41(8), 743-757.), Beeler-Reuter (Beeler, G. W., & Reuter, H. (1977). Reconstruction of the action potential of ventricular myocardial fibres. The Journal of physiology, 268(1), 177-210.).
+Isogeometric solver for the monodomain model (electrophysiological reaction-diffusion system) over NURBS surfaces. The monodomain equation is integrated in space via a NURBS-based isogeometric method, in time via the semi-implicit Crank-Nicholson/Admas-Bashforth scheme. Derivatives over the surface are computed using the local curvilinear frame defined by the metric tensor. The associated ionic current model is advanced in time via a fourth-order Runge-Kutta scheme. Three possible ionic current models are available:  
+Aliev-Panfilov (Aliev, R. R., & Panfilov, A. V. (1996). A simple two-variable model of cardiac excitation. Chaos, Solitons & Fractals, 7(3), 293-301.),  
+Rogers-McCulloch (Rogers, J. M., & McCulloch, A. D. (1994). A collocation-Galerkin finite element model of cardiac action potential propagation. IEEE Transactions on Biomedical Engineering, 41(8), 743-757.),  
+Beeler-Reuter (Beeler, G. W., & Reuter, H. (1977). Reconstruction of the action potential of ventricular myocardial fibres. The Journal of physiology, 268(1), 177-210.).
 
 # Developers
 Alessandro Nitti, Polytechnic University of Bari (https://scholar.google.it/citations?user=lv1V6-4AAAAJ&hl=it&oi=ao)  
@@ -33,7 +36,7 @@ Details about the methodology and the implementation can be found in the followi
 https://doi.org/10.1016/j.cma.2021.113877  
 https://doi.org/10.1016/j.cma.2004.10.008  
 
-The conducticity tensor is provided in the parametric space, i.e., on Cartesian bases, and than transformed to the local curvilinear bases on the surface.
+The conducticity tensor can be prescribed w.r.t. Cartesian bases or local curviliner bases. One can either specify a desired lococal fiber orinetation within the subroutine "e_stiff_mat" in the file std_mat.f03.
 
 # Dependencies 
 Install the HDF5 library (sudo apt get ), any release from 2015 on.  
