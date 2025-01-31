@@ -9,17 +9,18 @@ kf=1;
 
 
 %% input parameters
-loc='../test_planeslab/out/';         % case output folder
-% loc='../test_planeslab_patchwise/out/';         % case output folder
+loc='../test_planeslab_mp/out/';         % case output folder
+% loc='../test_planeslab/out/';         % case output folder
+% loc='../test_planeslab_BR/out/';         % case output folder
 ns=0;                               % starting file id
-nn=[200,200];                       % points on the surface for the contour representation
+nn=[200,40];                       % points on the surface for the contour representation
 var=1;                              % variable to plot: 1-potential, 2-1st rec. variable, 3-iion, 4-iapp
 wrf=false(1);                       % write frames to file
 
 
 
 %% read some stuff from the input files
-tmp=dir(strcat(loc,'p1_kin'));
+tmp=dir(strcat(loc,'p01_kin'));
 ne=size(tmp,1)-4;
 
 fname=strcat(loc,'../input/modelpar.in');
@@ -38,59 +39,61 @@ clear cac
 
 
 %% read geometry from input file
-for np=1:n_patches
+for ip=1:n_patches
 
-    filename=strcat(loc,'p',num2str(np),'_kin/refgeo.txt');    
-    [p(np),q(np),U(:,np),V(:,np),CP(:,:,:,np)]=read_refgeo(filename);
+    filename=strcat(loc,'p',sprintf('%02d',ip),'_kin/refgeo.txt');    
+    [p(ip),q(ip),U{ip},V{ip},CP{ip}]=read_refgeo(filename);
        
-    [X(:,:,np),Y(:,:,np),Z(:,:,np)] = create_surf(p(np),q(np),U(:,np),V(:,np),CP(:,:,:,np),nn);
+    [X(:,:,ip),Y(:,:,ip),Z(:,:,ip)] = create_surf(p(ip),q(ip),U{ip},V{ip},CP{ip},nn);
 
 end
 
 
 figure(kf); kf=kf+1;
 set(gcf,'position',[100,100,700,420])
-for n=ns:1:ne
+for n=0:1:ne
 
     t(n+1) = n*dtfig;    
 
-    for np=1:n_patches
+    for ip=1:n_patches
 
-        cp_u=length(CP(:,1,1,np));
-        cp_v=length(CP(1,:,1,np));
+        cp_u=length(CP{ip}(:,1,1));
+        cp_v=length(CP{ip}(1,:,1));
     
         % read solution file
-        fname=strcat(loc,'p',num2str(np),'_kin/t',sprintf('%06d',n),'.h5');
+        fname=strcat(loc,'p',sprintf('%02d',ip),'_kin/t',sprintf('%06d',n),'.h5');
         [CP_pot,CP_wrec,CP_ii,CP_ia]=getdatah5(fname,cp_u,cp_v);
 
-        if (np==1)
-            vv(n+1) = get_point_eval(p(np),0.3,U(:,np),q(np),0.5,V(:,np),CP(:,:,:,np),CP_pot);
-            iion(n+1) = get_point_eval(p(np),0.3,U(:,np),q(np),0.5,V(:,np),CP(:,:,:,np),CP_ii);
+        if (ip==1)
+            vv(n+1) = get_point_eval(p(ip),0.3,U{ip},q(ip),0.5,V{ip},CP{ip},CP_pot);
+            iion(n+1) = get_point_eval(p(ip),0.3,U{ip},q(ip),0.5,V{ip},CP{ip},CP_ii);
+            % vv(n+1) = get_point_eval(p(np),0.6,U{ip},q(np),0.5,V{ip},CP{ip},CP_pot);      % for 2 patch case
+            % iion(n+1) = get_point_eval(p(np),0.6,U{ip},q(np),0.5,V{ip},CP{ip},CP_ii);            
         end
        
         % evaluate potential on a subgrid to get a smooth scalar field
         switch var
             case 1
-                C = create_cont(p(np),q(np),U(:,np),V(:,np),CP(:,:,:,np),CP_pot,nn);                
+                C = create_cont(p(ip),q(ip),U{ip},V{ip},CP{ip},CP_pot,nn);                
                 titi='action potential [mV]';                
             case 2
-                C = create_cont(p(np),q(np),U(:,np),V(:,np),CP(:,:,:,np),CP_wrec(:,:,1),nn);
+                C = create_cont(p(ip),q(ip),U{ip},V{ip},CP{ip},CP_wrec(:,:,1),nn);
                 titi='1st gating variable';
             case 3
-                C = create_cont(p(np),q(np),U(:,np),V(:,np),CP(:,:,:,np),CP_ii,nn);
+                C = create_cont(p(ip),q(ip),U{ip},V{ip},CP{ip},CP_ii,nn);
                 titi='ionic current [mA/cm$^2$]';
             case 4
-                C = create_cont(p(np),q(np),U(:,np),V(:,np),CP(:,:,:,np),CP_ia,nn);
+                C = create_cont(p(ip),q(ip),U{ip},V{ip},CP{ip},CP_ia,nn);
                 titi='applied current [mA/cm$^2$]';
         end
 
-        surf(X(:,:,np),Y(:,:,np),Z(:,:,np),C,'EdgeColor','none')
+        surf(X(:,:,ip),Y(:,:,ip),Z(:,:,ip),C,'EdgeColor','none')
         hold on
 
     end
 
     colorbar
-    % clim([-80,20])    
+    clim([-80,20])    
     axis equal
     % axis([0,2,0,0.2,-0.2,0.2])
     xlabel('x [cm]','FontSize',14,'Interpreter','latex');

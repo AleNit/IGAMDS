@@ -9,11 +9,11 @@ kf=1;
 
 
 %% input parameters
-loc='../test_cyl/out/';         % case output folder
+loc='../test_epi/out/';         % case output folder
 ns=0;                               % starting file id
 nn=[200,200];                       % points on the surface for the contour representation
 var=1;                              % variable to plot: 1-potential, 2-1st rec. variable, 3-iion, 4-iapp
-wrf=false(1);                       % write frames to file
+wrf=true;                       % write frames to file
 
 
 
@@ -66,16 +66,16 @@ for n=1:1:ne
         switch var
             case 1
                 C = create_cont(p(ip),q(ip),U{ip},V{ip},CP{ip},CP_pot,nn);                
-                titi='action potential [mV]';
+                titi='action potential [mV]';                
             case 2
                 C = create_cont(p(ip),q(ip),U{ip},V{ip},CP{ip},CP_wrec(:,:,1),nn);
                 titi='1st gating variable';
             case 3
                 C = create_cont(p(ip),q(ip),U{ip},V{ip},CP{ip},CP_ii,nn);
-                titi='ionic current [mA/cm^2]';
+                titi='ionic current [mA/cm$^2$]';
             case 4
                 C = create_cont(p(ip),q(ip),U{ip},V{ip},CP{ip},CP_ia,nn);
-                titi='applied current [mA/cm^2]';
+                titi='applied current [mA/cm$^2$]';
         end
 
         surf(X(:,:,ip),Y(:,:,ip),Z(:,:,ip),C,'EdgeColor','none')
@@ -86,14 +86,14 @@ for n=1:1:ne
     colorbar
     clim([-80,20])    
     axis equal
-    axis([0,1,0,1,0.0,0.3])
     xlabel('x [cm]','FontSize',14,'Interpreter','latex');
     ylabel('y [cm]','FontSize',14,'Interpreter','latex');
     zlabel('z [cm]','FontSize',14,'Interpreter','latex');
     tit=strcat(titi,', t =',sprintf('%4.2f',n*dtfig),' [ms]'); 
     title(tit,'FontSize',14,'Interpreter','latex')
-    % xticks(0:0.1:1); yticks(0:0.1:1)
-    view(-12,20)
+    camlight
+    lightangle(100,30)
+    view(150,20)
     drawnow   
     hold off    
     disp(['step ' num2str(n)])
@@ -101,7 +101,7 @@ for n=1:1:ne
     if (wrf)
         picname=strcat('./frames/frame_',sprintf('%05d',n));
         print('-dpng','-r200',picname);                        
-    end       
+    end    
     
 end
 
