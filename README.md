@@ -49,8 +49,8 @@ Linear systems are solved via the MGMRES algorithm provided by John Burkardt, (B
 6. Run the test in the <test_name> folder  
 
 # Organization of the repository
-./preproc/: contains matlab pre-processing scripts that generate the test folder and the input files needed for the execution. It is used to design the Eulerian and Lagrangian grid.    
-./postproc/: contains matlab post-processing scripts that allow to visualize the simulation output. Pressure/velocity/vorticity fields are displayed along with the body position.   
+./preproc/: contains matlab pre-processing scripts that generate the test folder and the input files needed for the execution. It is used to design/load the NURBS geometry, choose the membrane model and the stimulation protocol, specify the numerical setting and create the input files needed for the execution of the Fortran program.    
+./postproc/: contains matlab post-processing scripts that allow to visualize the simulation output. Action potential and ioni current can be displayed over the assigned surface.   
 ./src/: contains the makefile and all the routines to execute the program.  
 ./test_cyl.mp4: tape showing the action potential propagation on a cylindrical shell.
 ./test_spiral.mp4: tape showing the trigger of a self-sustained spiral wave potential.
