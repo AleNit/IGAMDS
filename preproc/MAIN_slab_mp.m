@@ -1,5 +1,5 @@
 
-% create input geomtry for the cylindrical surface test
+% create input geomtry for the plane slab test, multipatch case
 
 clc
 clear 
@@ -8,26 +8,31 @@ addpath('./IGA-quadrature-master/')
 
 
 %% general input
-cname='test_cyl';               % case name
-np=1;                                               % number of patches
+cname='test_planeslab_mp';                          % case name
+np=2;                                               % number of patches
 wrt=true;                                           % create input folder
-cols={"#0072BD"};                         % patch colors
+cols={"#0072BD","#D95319"};                         % patch colors
 
 
 %% geometrical input
 % surface
-R=1/sqrt(2);        % base radius
-th=1/2*pi;    % base angle
-L=1;        % cylinder height
-
-p(1)=2; 
+p(1)=1; 
 q(1)=1;
-U{1}=[0 0 0 1 1 1];
-V{1}=[0 0 1 1 ];
-CP{1}(:,:,1)=[0, 0; R*sin(th/2), R*sin(th/2); 2*R*sin(th/2), 2*R*sin(th/2)];
-CP{1}(:,:,2)=[0, L; 0, L; 0, L];
-CP{1}(:,:,3)=[0.0, 0.0; R*sin(th/2)*tan(th/2), R*sin(th/2)*tan(th/2); 0.0, 0.0];
-CP{1}(:,:,4)=[1.0, 1.0; cos(th/2), cos(th/2); 1.0, 1.0];
+U{1}=[0 0 1 1];
+V{1}=[0 0 1 1];
+CP{1}(:,:,1)=[0.0 0.0; 0.7 0.9];
+CP{1}(:,:,2)=[0.0,0.2; 0.0,0.2];
+CP{1}(:,:,3)=[0.0,0.0; 0.0,0.0];
+CP{1}(:,:,4)=[1.0,1.0; 1.0,1.0];
+
+p(2)=1; 
+q(2)=1;
+U{2}=[0 0 1 1];
+V{2}=[0 0 1 1];
+CP{2}(:,:,1)=[0.7 0.9; 2.0 2.0];
+CP{2}(:,:,2)=[0.0,0.2; 0.0,0.2];
+CP{2}(:,:,3)=[0.0,0.0; 0.0,0.0];
+CP{2}(:,:,4)=[1.0,1.0; 1.0,1.0];
 
 % patchwise integration parameters
 over = 0; order = 4; regularity = 1;
@@ -51,14 +56,18 @@ title('initial surface','FontSize',14,'Interpreter','latex')
 
 
 
+
 %% refinement
 degu=2; 
 degv=2;
-refu=ceil(120/(length(U{1})-p(1)-2)); 
-refv=ceil(120/(length(V{1})-q(1)-2));
+refua=[ceil(64/(length(U{1})-p(1)-2)),ceil(96/(length(U{1})-p(1)-2))]; 
+refva=[ceil(20/(length(V{1})-q(1)-2)),ceil(20/(length(V{1})-q(1)-2))];
 
 ndof=0;
 for ip=1:np
+
+    refu=refua(ip);
+    refv=refva(ip);
 
     [CP{ip},U{ip},V{ip},p(ip),q(ip)] = degree_elevate_surf(p(ip),q(ip),U{ip},V{ip},CP{ip},degu-p(ip),degv-q(ip));
     
@@ -92,7 +101,13 @@ title('refined surface','FontSize',14,'Interpreter','latex')
 
 
 %% build connectivity matrix 
-CONN = zeros(2,2);
+CONN = zeros(nv(2),2);
+for i=1:nv(2)
+    slave = ndofp(1)+nu(2)*(i-1)+1;
+    master = nu(1)*i;
+    CONN(i,:) = [slave,master];
+end
+
 
 
 %% write to output file
@@ -122,7 +137,7 @@ if (wrt)
         ' ', ...
         ' ', ...
         '###################### DYNAMICS PARAMETERS', ...
-        '0.006     		    # [ms] time-step size (dt)', ...
+        '0.008     		    # [ms] time-step size (dt)', ...
         '120.0        	    # [ms] runtime (rt)', ...
         '.false.			# reduced patchwise integration on reactive terms (redint)'};
 
@@ -143,10 +158,10 @@ if (wrt)
         '0.0                     	 	# t_start [ms]	', ...
         '0.5              		 	# t_end [ms]	', ...
         '1               			# patch ID', ...
-        '0.0 0.05                       	 	# U subset', ...
-        '0.0 0.05                   	 	# V subset', ...
-        '2.0              			# Iapp [mA/cm^2]', ...
-        '.false.                  		# overwrite potential', ...
+        '0.0 0.0                       	 	# U subset', ...
+        '0.0 0.0                   	 	# V subset', ...
+        '0.0              			# Iapp [mA/cm^2]', ...
+        '.true.                  		# overwrite potential', ...
         '1.0               			# value (dim.less or dimensional, depends on the membrane model)', ...
         '1,0,0,0                  		# forced side: {W,N,E,S}', ...
         ' ', ...
@@ -206,4 +221,3 @@ if (wrt)
     status=copyfile('./template_files/go',dest);           
 
 end
-

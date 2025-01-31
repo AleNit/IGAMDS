@@ -1,11 +1,12 @@
-function plotNURBSsurf(p,q,U,V,CP,el,conp)
+
+function plotNURBSsurf(p,q,U,V,CP,el,conp,col)
 % plots the surface, elements and control points
 % J. Kiendl
 
 [X,Y,Z] = create_surf(p,q,U,V,CP);
 
 % geometry
-surf(X,Y,Z,'FaceColor',[0.8 0.8 0.8],'EdgeColor','none')
+surf(X,Y,Z,'FaceColor',col,'EdgeColor','none')
 hold on
 
 if (el) % element edges

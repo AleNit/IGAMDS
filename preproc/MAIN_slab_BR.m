@@ -1,5 +1,6 @@
 
-% create input geomtry for the cylindrical surface test
+% create input geomtry for the plane slab test with the Beeler-Reuter cell
+% model
 
 clc
 clear 
@@ -8,26 +9,22 @@ addpath('./IGA-quadrature-master/')
 
 
 %% general input
-cname='test_cyl';               % case name
-np=1;                                               % number of patches
-wrt=true;                                           % create input folder
+cname='test_planeslab_BR';      % case name
+np=1;                           % number of patches
+wrt=true;                           % create input folder
 cols={"#0072BD"};                         % patch colors
 
 
 %% geometrical input
 % surface
-R=1/sqrt(2);        % base radius
-th=1/2*pi;    % base angle
-L=1;        % cylinder height
-
-p(1)=2; 
+p(1)=1; 
 q(1)=1;
-U{1}=[0 0 0 1 1 1];
-V{1}=[0 0 1 1 ];
-CP{1}(:,:,1)=[0, 0; R*sin(th/2), R*sin(th/2); 2*R*sin(th/2), 2*R*sin(th/2)];
-CP{1}(:,:,2)=[0, L; 0, L; 0, L];
-CP{1}(:,:,3)=[0.0, 0.0; R*sin(th/2)*tan(th/2), R*sin(th/2)*tan(th/2); 0.0, 0.0];
-CP{1}(:,:,4)=[1.0, 1.0; cos(th/2), cos(th/2); 1.0, 1.0];
+U{1}=[0 0 1 1];
+V{1}=[0 0 1 1];
+CP{1}(:,:,1)=[0.0 0.0; 1.0 1.0].*8;
+CP{1}(:,:,2)=[0.0,0.2; 0.0,0.2];
+CP{1}(:,:,3)=[0.0,0.0; 0.0,0.0];
+CP{1}(:,:,4)=[1.0,1.0; 1.0,1.0];
 
 % patchwise integration parameters
 over = 0; order = 4; regularity = 1;
@@ -54,8 +51,9 @@ title('initial surface','FontSize',14,'Interpreter','latex')
 %% refinement
 degu=2; 
 degv=2;
-refu=ceil(120/(length(U{1})-p(1)-2)); 
-refv=ceil(120/(length(V{1})-q(1)-2));
+refu=ceil(600/(length(U{1})-p(1)-2)); 
+refv=ceil(3/(length(V{1})-q(1)-2));
+
 
 ndof=0;
 for ip=1:np
@@ -95,8 +93,11 @@ title('refined surface','FontSize',14,'Interpreter','latex')
 CONN = zeros(2,2);
 
 
+
 %% write to output file
-if (wrt)
+if (wrt)  
+
+
     %---------------------------------------- create input folder
     infold=strcat('../',cname,'/input/');
     if (~exist(infold, 'dir'))
@@ -110,19 +111,19 @@ if (wrt)
         '###################### CASE', ...
         strcat(num2str(np),'          		# number of patches (np)'), ...
         '.false.    		# read restart (is)', ...
-        '200        		# step interval to print output (pint)', ...
+        '100        		# step interval to print output (pint)', ...
         '100.0         	    # [ms] time interval for writing restart files (trest)', ...
         ' ', ...
         ' ', ...
         '###################### TISSUE PROPERTIES', ...
-        '1			        # membrane model selector', ...
-        '1.0        		# [mF/cm^3] tissue capacity (Cm)', ...
-        '0.0001,0.0001     		# [S/cm] isotropic conductivity coefficient (Diso)', ...
-        '1.0     		    # [1/cm] surface-to-volume cell ratio (chi)', ...
+        '3			        # membrane model selector', ...
+        '1.4        		# [mF/cm^3] tissue capacity (Cm)', ...
+        '0.0029,0.0029     		# [S/cm] isotropic conductivity coefficient (Diso)', ...
+        '1400.0     		    # [1/cm] surface-to-volume cell ratio (chi)', ...
         ' ', ...
         ' ', ...
         '###################### DYNAMICS PARAMETERS', ...
-        '0.006     		    # [ms] time-step size (dt)', ...
+        '0.01     		    # [ms] time-step size (dt)', ...
         '120.0        	    # [ms] runtime (rt)', ...
         '.false.			# reduced patchwise integration on reactive terms (redint)'};
 
@@ -141,11 +142,11 @@ if (wrt)
         ' ', ...
         '############################ stimulus 1', ...
         '0.0                     	 	# t_start [ms]	', ...
-        '0.5              		 	# t_end [ms]	', ...
+        '2.5              		 	# t_end [ms]	', ...
         '1               			# patch ID', ...
-        '0.0 0.05                       	 	# U subset', ...
-        '0.0 0.05                   	 	# V subset', ...
-        '2.0              			# Iapp [mA/cm^2]', ...
+        '0.3 0.34                       	 	# U subset', ...
+        '0.0 1.0                   	 	# V subset', ...
+        '0.025              			# Iapp [mA/cm^2]', ...
         '.false.                  		# overwrite potential', ...
         '1.0               			# value (dim.less or dimensional, depends on the membrane model)', ...
         '1,0,0,0                  		# forced side: {W,N,E,S}', ...
@@ -175,7 +176,6 @@ if (wrt)
     fclose(fid);
 
 
-
     for ip=1:np
 
         %---------------------------------------- write geometry to file
@@ -200,10 +200,13 @@ if (wrt)
     fclose(fileID);
 
 
-
     %---------------------------------------- copy submission script
     dest=strcat('../',cname,'/go');
     status=copyfile('./template_files/go',dest);           
 
 end
+
+
+
+
 
