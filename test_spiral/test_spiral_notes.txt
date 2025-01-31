@@ -1,1 +1,0 @@
-The action potential spiral can be triggered by setting the parameter "a" in the Aliev-Panfilov model (./src/membrane/Aliev-Panfilov.in) to: a=0.15.
