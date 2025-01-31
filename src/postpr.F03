@@ -140,12 +140,12 @@
 
      !It prints global quantities on putput file 
             
-      SUBROUTINE print_gq(t,ns,pot,vel,wrec,iion,iapp,dir,n_steps,nss)
+      SUBROUTINE print_gq(t,ns,pot,vel,wrec,iion,iapp,dir,n_steps,nss,itt,resid)
 
       implicit none
      !----------------------------------------------------------
-      integer, intent(in) :: ns, n_steps, nss
-      real, intent(in) :: pot, vel, t, wrec, iion, iapp
+      integer, intent(in) :: ns, n_steps, nss, itt
+      real, intent(in) :: pot, vel, t, wrec, iion, iapp, resid
       character(*), intent(in) :: dir
      !----------------------------------------------------------
       character(100) :: filename
@@ -156,8 +156,8 @@
         open(193, file=filename, action="write")
       endif
 
-      write(193,128) t, ns, pot, vel, wrec, iion, iapp
- 128  format(1x,e16.9,1x,i5,1x,e16.9,1x,e16.9,1x,e16.9,1x,e16.9,1x,e16.9)     
+      write(193,128) t, ns, pot, wrec, iion, iapp, itt, resid
+ 128  format(1x,e16.9,1x,i5,1x,e16.9,1x,e16.9,1x,e16.9,1x,e16.9,1x,i3,1x,e16.9)     
 
       if (ns==n_steps)  close(193)
 

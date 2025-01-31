@@ -52,8 +52,8 @@
       allocate(pa%ddR_s(ru,rv,n_gpu,n_gpv,ne,3))
 
      !allocate storage matricx of basis functions needed for patchwise integration
-      kj=sum(ngpv_pi)
-      ki=sum(ngpu_pi)
+      kj=sum(pa%ngpv_pi)
+      ki=sum(pa%ngpu_pi)
       allocate(pa%R_s_pi(ki,kj,ne))
       allocate(pa%dR_s_pi(ki,kj,ne,2))
       allocate(pa%dA_pi(ki,kj))
@@ -95,14 +95,14 @@
            !for reduced (patchwise) quadrature
             ii=i-pa%pr
             jj=j-pa%qr
-            do kv=1, ngpv_pi(jj) 
-              do ku=1, ngpu_pi(ii)
+            do kv=1, pa%ngpv_pi(jj) 
+              do ku=1, pa%ngpu_pi(ii)
 
-                ki=sum(ngpu_pi(1:ii-1))+ku
-                kj=sum(ngpv_pi(1:jj-1))+kv
+                ki=sum(pa%ngpu_pi(1:ii-1))+ku
+                kj=sum(pa%ngpv_pi(1:jj-1))+kv
 
-                un=un_pi(ki)
-                vn=vn_pi(kj)
+                un=pa%un_pi(ki)
+                vn=pa%vn_pi(kj)
             
                 call bspline_basis(i,pa%pr,un,pa%u,size(pa%u),BSb_u)
                 call bspline_basis(j,pa%qr,vn,pa%v,size(pa%v),BSb_v)
@@ -213,11 +213,11 @@
           
 
            !for reduced (patchwise) quadrature
-            do kv=1, ngpv_pi(j) 
-              do ku=1, ngpu_pi(i)
+            do kv=1, pa%ngpv_pi(j) 
+              do ku=1, pa%ngpu_pi(i)
 
-                ki=sum(ngpu_pi(1:i-1))+ku
-                kj=sum(ngpv_pi(1:j-1))+kv
+                ki=sum(pa%ngpu_pi(1:i-1))+ku
+                kj=sum(pa%ngpv_pi(1:j-1))+kv
 
                 G=0.0
                 k=0

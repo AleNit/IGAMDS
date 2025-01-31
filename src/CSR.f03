@@ -55,7 +55,7 @@
 
       CALL cpu_time(t1)
 
-     !sort COO arrays by row inclusing zeros 
+     !sort COO arrays by row including zeros 
       CALL quicksort(IAcoo,1,nd,VAcoo,JAcoo)
 
       VA    = VAcoo(nd-nnz+1:nd)
@@ -63,6 +63,7 @@
       IAtmp = IAcoo(nd-nnz+1:nd)
 
       CALL cpu_time(t2)
+
 
      !for each row sort the COO arrays by column; IAtmp will be destroyed
       c=1
@@ -175,6 +176,8 @@
 
      !=====================================================
 
+     !boubble sort algorithm for real array a
+
       SUBROUTINE Bubble_Sort(a,indi,indj,k)
 
       implicit none
@@ -216,109 +219,7 @@
    
       ENDSUBROUTINE
 
-!     !===================================================== 
-!      
-!     ! Sorts an array arr into ascending numerical order using the Quicksort algorithm. arr is
-!     ! replaced on output by its sorted rearrangement.
-!     ! Parameters: NN is the size of subarrays sorted by straight insertion and NSTACK is the
-!     ! required auxiliary storage.
-!
-!      SUBROUTINE quicksort(n,arr)
-!
-!      IMPLICIT NONE
-!     !-----------------------------------------------------
-!      INTEGER, INTENT(IN) :: n
-!      REAL, DIMENSION(n), INTENT(INOUT) :: arr
-!      INTEGER, PARAMETER :: NN=15, NSTACK=50
-!      REAL :: a
-!      INTEGER :: k,i,j,jstack,l,r
-!      INTEGER, DIMENSION(NSTACK) :: istack
-!     !-----------------------------------------------------
-!
-!      jstack=0
-!      l=1
-!      r=n
-!      
-!      do
-!
-!        if (r-l < NN) then !Insertion sort when subarray small enough.
-!          do j=l+1,r
-!            a=arr(j)
-!            do i=j-1,l,-1
-!              if (arr(i) <= a) exit
-!              arr(i+1)=arr(i)
-!            enddo
-!            arr(i+1)=a
-!          enddo
-!          if (jstack == 0) RETURN
-!          r=istack(jstack) !Pop stack and begin a new round of partitionl=
-!          istack(jstack-1) .
-!          jstack=jstack-2
-!
-!        else !Choose median of left, center, and right elements
-!             !as partitioning element a. Also rearrange so
-!             !that a(l) ≤ a(l+1) ≤ a(r).
-!          k=(l+r)/2
-!          call swap(arr(k),arr(l+1))
-!          call swap(arr(l),arr(r),arr(l)>arr(r))
-!          call swap(arr(l+1),arr(r),arr(l+1)>arr(r))
-!          call swap(arr(l),arr(l+1),arr(l)>arr(l+1))
-!          i=l+1 !Initialize pointers for partitioning.
-!          j=r
-!          a=arr(l+1) !Partitioning element.
-!      
-!          do !Here is the meat.
-!            do !Scan up to find element >= a.
-!              i=i+1
-!              if (arr(i) >= a) exit
-!            enddo
-!            do !Scan down to find element <= a.
-!              j=j-1
-!              if (arr(j) <= a) exit
-!            enddo
-!            if (j < i) exit !Pointers crossed. Exit with partitioning complete.
-!            call swap(arr(i),arr(j)) !Exchange elements.
-!          enddo
-!          arr(l+1)=arr(j) !Insert partitioning element.
-!          arr(j)=a
-!          jstack=jstack+2
-!      
-!      !Push pointers to larger subarray on stack; process smaller subarray immediately.
-!          if (jstack > NSTACK) then
-!            write(*,*) '... QuickSort algorithm failed'
-!            stop
-!          endif  
-!          if (r-i+1 >= j-l) then
-!            istack(jstack)=r
-!            istack(jstack-1)=i
-!            r=j-1
-!          else
-!            istack(jstack)=j-1
-!            istack(jstack-1)=l
-!            l=i
-!          endif
-!        endif
-!      
-!      enddo
-!
-!
-!      ENDSUBROUTINE
-!
-!     !=====================================================
-!
-!      SUBROUTINE swap_i(a,b)
-!
-!      implicit none
-!      integer, intent(inout) :: a,b
-!      integer :: dum
-!
-!      dum=a
-!      a=b
-!      b=dum
-!
-!      ENDSUBROUTINE
-!     
-!     !=====================================================
+     !===================================================== 
 
       ! QuickSort algorithm on integer array a, with two slave arrays,
       ! one real and one integer
@@ -329,7 +230,6 @@
        RECURSIVE SUBROUTINE quicksort(a,first,last,slaver,slavei)
        
        implicit none
-!       real*8  a(*), x, t
        integer :: a(*), x, ti, slavei(*)
        real :: slaver(*), tr
        integer :: first, last
@@ -358,4 +258,61 @@
        ENDSUBROUTINE
 
      !=====================================================
+
+      SUBROUTINE master_slave(str,je,c,CONN,IACOO,JACOO,VACOO,    &
+                              n,det,Cm)
+
+      implicit none
+     !---------------------------------------------------- 
+      integer, intent(in) :: je,n,c
+      integer, intent(in) :: CONN(c,2)
+      integer, intent(inout) :: IACOO(n),JACOO(n)
+      real, intent(in) :: det,Cm
+      real, intent(inout) :: VACOO(n)
+      character(1), intent(in) :: str
+     !----------------------------------------------------
+      integer :: i,j
+      real :: v
+     !----------------------------------------------------
+      
+      if (str=='m') then        !mass matrix
+        v = det/Cm*0.5
+      elseif (str=='k') then    !stiffness matrix
+        v = 1.0
+      endif  
+
+
+     !move elements on the slave rows to corresponding mater rows
+      do i = 1, n
+        do j = 1, c
+          if ( IACOO(i) == CONN(j,1) ) then
+            IACOO(i) = CONN(j,2)
+          endif  
+        enddo
+      enddo  
+
+
+     !add rows for d.o.f. coupling 
+      j = je + 1  
+      do i = 1, c
+
+       !slave
+        IACOO(j) = CONN(i,1)
+        JACOO(j) = CONN(i,1)
+        VACOO(j) = v
+
+       !master
+        IACOO(j+1) = CONN(i,1)
+        JACOO(j+1) = CONN(i,2)
+        VACOO(j+1) = -v
+
+        j = j + 2
+
+      enddo      
+
+
+      ENDSUBROUTINE
+
+     !=====================================================
+
 

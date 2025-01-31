@@ -2,8 +2,8 @@
      
       USE utilities
 
-      integer, dimension(:), allocatable :: ngpu_pi, ngpv_pi
-      real, dimension(:), allocatable :: un_pi,vn_pi,gwu_pi,gwv_pi
+!      integer, dimension(:), allocatable :: ngpu_pi, ngpv_pi
+!      real, dimension(:), allocatable :: un_pi,vn_pi,gwu_pi,gwv_pi
 
 
       type multipatch
@@ -39,7 +39,11 @@
                   Iion_n(:), i_s(:), wrec_n(:,:), Iapp_n(:), con_n(:,:)
 
         real, allocatable :: cp_pot_n(:,:), cp_wrec_n(:,:,:)
-                   
+        
+       !for patchwise integration         
+        integer, dimension(:), allocatable :: ngpu_pi, ngpv_pi
+        real, dimension(:), allocatable :: un_pi,vn_pi,gwu_pi,gwv_pi
+
       endtype
       
       CONTAINS
@@ -56,11 +60,11 @@
       integer, intent(in) :: k
      !---------------------------------------------------------- 
       integer :: i, j
-      character(1) :: patch_ID
+      character(2) :: patch_ID
       character(200) :: row, filename
      !---------------------------------------------------------- 
 
-      write (patch_ID,'(I0)') k
+      write (patch_ID,'(I2.2)') k
 
       filename=trim('./input/igeo_p'//patch_ID//'.txt')
       open(99,file=filename,status="old",action="read")

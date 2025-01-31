@@ -204,13 +204,13 @@
      !It reads simulation parameters in input
            
       SUBROUTINE read_input_par(mp,is,np,Cm,mmod,       &
-                         Diso,chi,dt,rt,pint,trest,redint)
+                         Df,chi,dt,rt,pint,trest,redint)
       
       implicit none
      !----------------------------------------------------------
       logical, intent(out) :: mp, is, redint
       integer, intent(out) :: np, pint, mmod
-      real, intent(out) :: Cm, Diso, chi, dt, rt
+      real, intent(out) :: Cm, Df(2), chi, dt, rt
       real, intent(out) :: trest
      !----------------------------------------------------------
       integer :: i
@@ -228,7 +228,7 @@
       do i=1, 3; read(87,*); enddo
       read(87,*) mmod  
       read(87,*) Cm
-      read(87,*) Diso
+      read(87,*) Df
       read(87,*) chi
 
       do i=1, 3; read(87,*); enddo
@@ -243,10 +243,6 @@
         mp=.false.
       else
         mp=.true.
-        write(*,*)
-        write(*,*) '... the multipatch option is temporary not available'
-        write(*,*)
-        stop
       endif
 
 
@@ -267,29 +263,12 @@
       real, intent(out) :: vr,vp
       real, dimension(50), intent(inout) :: modc
      !----------------------------------------------------------
-      integer :: i,lt
-      character(512) :: exepath
+      integer :: i
      !----------------------------------------------------------
 
-      CALL get_command_argument(0, exepath)
-      lt=len_trim(exepath)
-
-      modc=0.0
-
-      selectcase(mmod)
-
-        case(1) !Aliev-Panfilov model
-          open(87,file=exepath(1:lt-5)//'membrane/Aliev_Panfilov.in',status="old",action="read")
-
-        case(2) !Rogers-McCulloch model
-          open(87,file=exepath(1:lt-5)//'membrane/Rogers-McCulloch.in',status="old",action="read")
-       
-        case(3) !Beeler-Reuter model
-          open(87,file=exepath(1:lt-5)//'membrane/Beeler-Reuter.in',status="old",action="read")         
-
-      endselect
-
      !read from file 
+      open(87,file='input/membrane.in',status="old",action="read")  
+
       read(87,*)
       read(87,*) nw,nc,nmodc
       do i=1, nmodc

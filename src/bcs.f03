@@ -127,16 +127,16 @@
 
               map=pa%emap(i,j)
 
-              do kv=1, ngpv_pi(j)
-                do ku=1, ngpu_pi(i)
+              do kv=1, pa%ngpv_pi(j)
+                do ku=1, pa%ngpu_pi(i)
 
-                  ki=sum(ngpu_pi(1:i-1))+ku
-                  kj=sum(ngpv_pi(1:j-1))+kv
+                  ki=sum(pa%ngpu_pi(1:i-1))+ku
+                  kj=sum(pa%ngpv_pi(1:j-1))+kv
                   
                   dA=pa%dA_pi(ki,kj)
-                  gwl=gwu_pi(ki)*gwv_pi(kj)
-                  un=un_pi(ki)
-                  vn=vn_pi(kj)
+                  gwl=pa%gwu_pi(ki)*pa%gwv_pi(kj)
+                  un=pa%un_pi(ki)
+                  vn=pa%vn_pi(kj)
                  
                  !state variables interpolation 
                   do n=1, nc+nw
@@ -501,39 +501,44 @@
      
      !====================================================================
 
-      SUBROUTINE read_patchwise_int
+      SUBROUTINE read_patchwise_int(pa,k)
 
       implicit none
-     !------------------------------------------------------------
+    !---------------------------------------------------------- 
+      type(multipatch), intent(inout), target :: pa
+      integer, intent(in) :: k
+     !---------------------------------------------------------- 
       integer :: i,neu,nev,ngpu,ngpv
+      character(2) :: patch_ID
      !------------------------------------------------------------
-
-      open(87,file='./input/qp_p1.in',status="old",action="read")    
+      
+      write (patch_ID,'(I2.2)') k
+      open(87,file='./input/qp_p'//patch_ID//'.in',status="old",action="read")    
 
       read(87,*) neu
-      allocate(ngpu_pi(neu))
+      allocate(pa%ngpu_pi(neu))
       do i=1,neu
-        read(87,*) ngpu_pi(i)
+        read(87,*) pa%ngpu_pi(i)
       enddo
       read(87,*)
       read(87,*) ngpu
-      allocate(un_pi(ngpu),gwu_pi(ngpu))
+      allocate(pa%un_pi(ngpu),pa%gwu_pi(ngpu))
       do i=1,ngpu
-        read(87,*) un_pi(i),gwu_pi(i)
+        read(87,*) pa%un_pi(i),pa%gwu_pi(i)
       enddo
       read(87,*)
 
 
       read(87,*) nev
-      allocate(ngpv_pi(nev))
+      allocate(pa%ngpv_pi(nev))
       do i=1,nev
-        read(87,*) ngpv_pi(i)
+        read(87,*) pa%ngpv_pi(i)
       enddo
       read(87,*)
       read(87,*) ngpv
-      allocate(vn_pi(ngpv),gwv_pi(ngpv))
+      allocate(pa%vn_pi(ngpv),pa%gwv_pi(ngpv))
       do i=1,ngpv
-        read(87,*) vn_pi(i),gwv_pi(i)
+        read(87,*) pa%vn_pi(i),pa%gwv_pi(i)
       enddo
 
 

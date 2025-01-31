@@ -51,8 +51,8 @@
 
       implicit none
      !----------------------------------------------------------
-      integer :: i, j, k, l, c
-      integer :: np, nss
+      integer :: i, j, k, l, c, ji, je
+      integer :: nss
       integer :: config
       integer :: n_steps, ns
       integer :: mmod, nmodc, kplt, nww, ncc
@@ -63,10 +63,12 @@
 
       real :: t_start, t_finish           
       real :: dt, time, tfin 
-      real :: Cm, Diso, chi, vrest, vpeak, vamp
+      real :: Cm, chi, vrest, vpeak, vamp, Df(2)
       real :: potch, iach, iich 
       real :: tol_abs, tol_rel, resid, trest
-      real :: t1,t2
+      real :: t1,t2,ti1,ti2
+
+      integer, dimension(:), allocatable :: kp,ndofm
       
       real, dimension(50) :: modc
 
@@ -76,7 +78,7 @@
 
       character(50) :: newdir
       character(16) :: dir_g
-      character(1) :: patch_ID
+      character(2) :: patch_ID
 
       type (multipatch), dimension(:), allocatable :: patch
     !---------------------------------------------------------- 
@@ -101,7 +103,7 @@
       write(*,*) '... reading input data'  
 
      !read input parameters 
-      CALL read_input_par(mp,isr,np,Cm,mmod,Diso,chi,dt,tfin,     &
+      CALL read_input_par(mp,isr,n_patches,Cm,mmod,Df,chi,dt,tfin,     &
                           pint,trest,redint)
 
       
@@ -110,10 +112,7 @@
 
       vamp=vpeak-vrest
 
-         
-      if (.not.mp) then;  n_patches=1;  endif
-
-
+       
 
 
      !########################  OUTPUT DIRECTORIES
@@ -127,7 +126,7 @@
       endif
 
       do i=1, n_patches
-        write (patch_ID,'(I0)') i
+        write (patch_ID,'(i2.2)') i
         newdir=trim(dir_g)//'/p'//patch_ID//'_kin'
         inquire(file=trim(newdir), exist=dir_e)
         if (.not.dir_e) then
@@ -142,7 +141,7 @@
       write(*,*)
       write(*,*) '... reading refined geometry'  
 
-      allocate(patch(n_patches), ndof(n_patches))
+      allocate(patch(n_patches),ndof(n_patches))
 
       do i=1, n_patches
         
@@ -152,11 +151,11 @@
         patch(i)%refu=patch(i)%cp_u-patch(i)%pr
         patch(i)%refv=patch(i)%cp_v-patch(i)%qr
 
-        CALL read_patchwise_int     ! this must be adapted to multipatch treatment!
+        CALL read_patchwise_int(patch(i),i)  
 
       enddo
 
-      ne=(patch(1)%pr+1)*(patch(1)%qr+1)    !basis function per element
+      ne=(patch(1)%pr+1)*(patch(1)%qr+1)    !basis function per element; assume this is the same for all patches
       ndof_e=ne                             !degrees of freedom per element
      
      !compute the number of degrees of freedom and estimate the 
@@ -206,8 +205,7 @@
 
      !the conductivity tensor is given in the patchwise parametric
      !space, i.e., in a 2D Cartesian frame
-      DD=reshape([1.0,0.0,0.0,1.0],shape(DD))
-      DD=Diso*DD
+      DD=reshape([Df(1),0.0,0.0,Df(2)],shape(DD))
 
       
      !assign 1 dof to every cp and build dof matrix
@@ -235,18 +233,67 @@
 
 
 
+     !########################  MULTIPATCH CONNECTIVITY ARRAY
+      if (mp) then
+
+        write(*,*)
+        write(*,*) '... reading multipatch connectivity array'  
+
+        open(87,file='./input/conn_mp.in',status="old",action="read")
+        read(87,*) connl
+        allocate(CONN(connl,2))
+        do i=1, connl
+          read(87,*) CONN(i,1), CONN(i,2)
+        enddo
+        close(87)         
+
+      endif  
+
+
+
+
+
      !########################  MASS MATRIX
       write(*,*)
       write(*,*) '... assembling mass matrix in COO format'  
+      write(*,*)
 
 
-     !mass matrix assembly
-      k=ne**2*patch(1)%refu*patch(1)%refv
+     !define the size of COO arrays
+      allocate(kp(n_patches),ndofm(n_patches+1))
+      k=0
+      ndofm=0
+      do i=1, n_patches
+        kp(i)=ne**2*patch(i)%refu*patch(i)%refv
+        k=k+kp(i)
+        ndofm(i+1)=sum(ndof(1:i))
+      enddo
+
+
+     !augment COO arrays for master-slave coupling
+      if (mp)     k=k+connl*2
+
+
+     !allocate COO arrays 
       allocate(VACOO(k));     VACOO=0.0
       allocate(IACOO(k),JACOO(k));    IACOO=0; JACOO=0
 
-      CALL mass_mat_ass(patch(1),1,VACOO,IACOO,JACOO,k)      !multipatch treatment is temporary disabled
-      
+
+     !assemble mass matrix in COO format 
+      do i=1, n_patches
+        je = sum(kp(1:i))
+        ji = je - kp(i) + 1
+        CALL mass_mat_ass(patch(i),i,VACOO(ji:je),IACOO(ji:je),   &
+                          JACOO(ji:je),kp(i),ndofm(i)) 
+        write(*,*) 'patch',i,'... done'
+      enddo  
+
+
+     !enforce master-slave coupling
+      if (mp) then
+        CALL master_slave('m',je,connl,CONN,IACOO,JACOO,VACOO,k,dt,Cm)
+      endif  
+
       write(*,*)
       write(*,*) '... moving mass matrix to CSR format'  
 
@@ -260,26 +307,26 @@
 
 
 
-     !################################# RESTART      
+
+     !################################# INITIALIZATION/RESTART      
       if (.not.isr) then
 
         write(*,*)
-        write(*,*) '... reading initial solution'  
+        write(*,*) '... reading/generating initial solution'  
   
        !initial solution
         pot_tot_0=0.0
         vel_tot_0=0.0
 
-        if (mmod==4) then
-       !for Beeler-Reuter model 
-        pot_tot_0=-83.3
-        wrec_tot_0(:,1)=1.87e-7
-        wrec_tot_0(:,2)=0.1644
-        wrec_tot_0(:,3)=0.01
-        wrec_tot_0(:,4)=0.9814
-        wrec_tot_0(:,5)=0.9673
-        wrec_tot_0(:,6)=0.0033
-        wrec_tot_0(:,7)=0.9884
+        if (mmod==3) then     !Beeler-Reuter
+          pot_tot_0       = -83.3
+          wrec_tot_0(:,1) = 1.87e-7
+          wrec_tot_0(:,2) = 0.1644
+          wrec_tot_0(:,3) = 0.01
+          wrec_tot_0(:,4) = 0.9814
+          wrec_tot_0(:,5) = 0.9673
+          wrec_tot_0(:,6) = 0.0033
+          wrec_tot_0(:,7) = 0.9884
         endif
 
         Iion_tot_0=0.0
@@ -300,7 +347,7 @@
        
         do i=1, n_patches
           
-          write (patch_ID,'(I0)') i
+          write (patch_ID,'(I2.2)') i
           newdir=trim(dir_g)//'/p'//patch_ID//'_kin'
       
          !plot refined, undeformed geometry 
@@ -314,7 +361,7 @@
   
        !print output results
         do i=1, n_patches
-          write (patch_ID,'(I0)') i
+          write (patch_ID,'(I2.2)') i
           newdir=trim(dir_g)//'/p'//patch_ID//'_kin'
 
          !apply affine transformations to get dimensional output
@@ -325,7 +372,7 @@
             patch(i)%Iapp_n=patch(i)%Iapp_n*vamp
             patch(i)%Iion_n=patch(i)%Iion_n*vamp          
           endif
- 
+
           CALL plot_time_n(ndof(i),patch(i)%pot_n,patch(i)%vel_n,   &
                          patch(i)%Iion_n,patch(i)%wrec_n,           &
                          patch(i)%Iapp_n,newdir,i,0,nww+ncc)  
@@ -334,7 +381,7 @@
   
         CALL print_gq(0.0,0,maxval(pot_tot_0),maxval(vel_tot_0),     &
                       maxval(wrec_tot_0,1),maxval(Iion_tot_0),       &
-                      maxval(Iapp_tot_0),dir_g,n_steps,0)
+                      maxval(Iapp_tot_0),dir_g,n_steps,0,0,0.0)
   
         pot_tot_n=pot_tot_0
         vel_tot_n=vel_tot_0
@@ -353,13 +400,29 @@
      !########################  STIFFNESS MATRIX
       write(*,*)
       write(*,*) '... assemling stiffness matrix in COO format'  
+      write(*,*)
 
      !stiffness matrix assembly
-      k=ne**2*patch(1)%refu*patch(1)%refv
+      k=sum(kp)
+
+      if (mp)     k=k+connl*2
+
       VACOO=0.0
       IACOO=0; JACOO=0
 
-      CALL stiff_mat_ass(patch(1),1,VACOO,IACOO,JACOO,k)      !multipatch treatment is temporary disabled
+      do i=1, n_patches
+       je = sum(kp(1:i))
+       ji = je - kp(i) + 1
+       CALL stiff_mat_ass(patch(i),i,VACOO(ji:je),IACOO(ji:je),    &
+                           JACOO(ji:je),kp(i),ndofm(i))
+       write(*,*) 'patch',i,'... done'
+      enddo  
+      
+     !enforce master-slave coupling
+      if (mp) then
+        CALL master_slave('k',je,connl,CONN,IACOO,JACOO,VACOO,k,dt,Cm)
+      endif
+
       
       write(*,*)
       write(*,*) '... moving stiffness matrix to CSR format'  
@@ -373,29 +436,28 @@
 
 
 
-
      !############################ LHS and RHS 
       write(*,*)
       write(*,*) '... generating LHS and static part of the RHS in CSR format'  
       
       allocate(LHS_CSR(nnz),RHSmat_CSR(nnz))
 
-      LHS_CSR=Cm/dt*mass_CSR+0.5*stiff_CSR
-      RHSmat_CSR=Cm/dt*mass_CSR-0.5*stiff_CSR
+      LHS_CSR    = Cm/dt*mass_CSR + 0.5*stiff_CSR
+      RHSmat_CSR = Cm/dt*mass_CSR - 0.5*stiff_CSR
 
       deallocate(stiff_CSR,mass_CSR) 
 
 
      !assign tolerances and iteration limits for the mgmres solver
       iitr=10   !inner iteration
-      eitr=5    !outer iteration
+      eitr=10    !outer iteration
       tol_abs=1.0e-14
       tol_rel=1.0e-8
 
 
       
 
-
+      
      !################################# RESTART
       if (isr) then
 
@@ -436,6 +498,10 @@
 
 
      !###################################### START TIME LOOP       
+
+      open(95,file=trim(dir_g)//'/walltime.txt',status='unknown')
+      
+
       kplt=1
       do ns=nss, n_steps
 
@@ -518,6 +584,7 @@
 
 
        !integrate ionic current
+        CALL cpu_time(ti1)
         config=1         
         do i=1, n_patches
           patch(i)%Iion_n=0.0
@@ -534,10 +601,21 @@
           k=k+ndof(i)
         enddo
 
+        CALL cpu_time(ti2)
+
 
        !assemble right hand side
         CALL amux(ndof_tot,pot_tot_n,RHS,RHSmat_CSR,JA,IA)
-        RHS=RHS-0.5*chi*Iion_tot_nm1+1.5*chi*Iion_tot_n+chi*Iapp_tot_n
+        RHS = RHS + chi*( 1.5*Iion_tot_n - 0.5*Iion_tot_nm1 ) + chi*Iapp_tot_n 
+        
+       
+       !apply master-slave correction to r.h.s.
+        if (mp) then
+          do i=1,connl
+            RHS(CONN(i,2)) = RHS(CONN(i,2)) + RHS(CONN(i,1))
+            RHS(CONN(i,1)) = 0.0
+          enddo
+        endif
 
 
        !solve linear system (iterative solver)
@@ -571,7 +649,7 @@
        !print results on output files
         if (mod(ns,pint)==0) then
           do i=1, n_patches
-            write (patch_ID,'(I0)') i
+            write (patch_ID,'(I2.2)') i
             newdir=trim(dir_g)//'/p'//patch_ID//'_kin'
     
            !apply affine transformations to get dimensional output
@@ -602,7 +680,7 @@
   
         CALL print_gq(time,ns,maxval(pot_tot_np1),maxval(vel_tot_np1),   &
                       maxval(wrec_tot_np1,1),maxval(Iion_tot_n),         &
-                      maxval(Iapp_tot_n),dir_g,n_steps,nss)
+                      maxval(Iapp_tot_n),dir_g,n_steps,nss,itt,resid)
   
        
        !screen output at time step n
@@ -633,8 +711,13 @@
  124      format(1x,'maxval{pot,Iion,Iapp} = ',es0.4,' [mV], ',    &
                  es0.4,' [-], ',es0.4,' [-]')        
           write(*,*) '_________________________________________________'
+
+         !print step wall time to file   
+          write(95,*) time,t2-t1,ti2-ti1
+          flush(95)
      
         endif
+
        
        !update time variables for next iteration
         pot_tot_n=pot_tot_np1
@@ -647,6 +730,8 @@
 
       enddo  ! TIME LOOP END
 
+
+      close(95)
 
       CALL cpu_time(t_finish)
       

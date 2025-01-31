@@ -41,58 +41,58 @@
       real, intent(in) :: m(50), t, wo(nw), v
       real, intent(out) :: k(nw)
      !---------------------------------------------------------- 
-      real :: alpha_x1, alpha_m, alpha_h, alpha_j, alpha_d, alpha_f
-      real :: beta_x1, beta_m, beta_h, beta_j, beta_d, beta_f
-      real :: i_s, V_Ca
+      real :: alpha_x1,alpha_m,alpha_h,alpha_j,alpha_d,alpha_f
+      real :: beta_x1,beta_m,beta_h,beta_j,beta_d,beta_f
+      real :: i_s,V_Ca
      !---------------------------------------------------------- 
           
       selectcase(mmod)
 
         case(1)   !Aliev-Panfilov model
-        k(1)=(m(6)+m(4)*wo(1)/(m(5)+v))*(-wo(1)-m(1)*v*(v-m(3)-1.0))
+
+          k(1)=(m(6)+m(4)*wo(1)/(m(5)+v))*(-wo(1)-m(1)*v*(v-m(3)-1.0))
 
         case(2)   !Mitchell-Schaeffer model
-        if ((v-m(5))<=1.0e-12) then
-          k(1)=(1.0-wo(1))/m(3)
-        else
-          k(1)=-wo(1)/m(4)
-        endif
 
-        case(3)   !Rogers-McCulloch model
-        k(1)=m(5)*(v-m(3)*wo(1))
+          if ((v-m(5))<=1.0e-12) then
+            k(1)=(1.0-wo(1))/m(3)
+          else
+            k(1)=-wo(1)/m(4)
+          endif
 
-        case(4)   !Beeler-Reuter model
-        alpha_x1=0.0005*exp(0.083*(v+50.0))/(exp(0.057*(v+50.0))+1.0)
-        beta_x1=0.0013*exp(-0.06*(v+20.0))/(exp(-0.04*(v+20.0))+1.0)
+        case(3)   !Beeler-Reuter model
 
-        alpha_m=-(v+47.0)/(exp(-0.1*(v+47.0))-1.0)
-        beta_m=40.0*exp(-0.056*(v+72.0))
-
-        alpha_h=0.126*exp(-0.25*(v+77.0))
-        beta_h=1.7/(exp(-0.082*(v+22.5))+1.0)
-
-        alpha_j=0.055*exp(-0.25*(V+78.0))/(exp(-0.2*(V+78.0))+1.0)
-        beta_j=0.3/(exp(-0.1*(V+32.0))+1.0)
-
-        alpha_d=0.095*exp(-0.01*(v-5.0))/(exp(-0.072*(v-5.0))+1.0)
-        beta_d=0.07*exp(-0.017*(v+44.0))/(exp(0.05*(v+44.0))+1.0)
-
-        alpha_f=0.012*exp(-0.008*(v+28.0))/(exp(0.15*(v+28.0))+1.0)
-        beta_f=0.0065*exp(-0.02*(v+30.0))/(exp(-0.2*(V+30.0))+1.0)
-
-       !concentration 
-        V_Ca=-82.3-13.0287*log(wo(1)) 
-        i_s=m(9)*wo(6)*wo(7)*(v-V_Ca)
-        
-        k(1)=-m(1)*i_s+m(3)*(m(2)-wo(1))
-        
-       !rec vars 
-        k(2)=alpha_x1*(1.0-wo(2))-beta_x1*wo(2)
-        k(3)=alpha_m*(1.0-wo(3))-beta_m*wo(3)
-        k(4)=alpha_h*(1.0-wo(4))-beta_h*wo(4)
-        k(5)=alpha_j*(1.0-wo(5))-beta_j*wo(5)
-        k(6)=alpha_d*(1.0-wo(6))-beta_d*wo(6)
-        k(7)=alpha_f*(1.0-wo(7))-beta_f*wo(7)
+          alpha_x1=0.0005*exp(0.083*(v+50.0))/(exp(0.057*(v+50.0))+1.0)
+          beta_x1=0.0013*exp(-0.06*(v+20.0))/(exp(-0.04*(v+20.0))+1.0)
+  
+          alpha_m=-(v+47.0)/(exp(-0.1*(v+47.0))-1.0)
+          beta_m=40.0*exp(-0.056*(v+72.0))
+  
+          alpha_h=0.126*exp(-0.25*(v+77.0))
+          beta_h=1.7/(exp(-0.082*(v+22.5))+1.0)
+  
+          alpha_j=0.055*exp(-0.25*(V+78.0))/(exp(-0.2*(V+78.0))+1.0)
+          beta_j=0.3/(exp(-0.1*(V+32.0))+1.0)
+  
+          alpha_d=0.095*exp(-0.01*(v-5.0))/(exp(-0.072*(v-5.0))+1.0)
+          beta_d=0.07*exp(-0.017*(v+44.0))/(exp(0.05*(v+44.0))+1.0)
+  
+          alpha_f=0.012*exp(-0.008*(v+28.0))/(exp(0.15*(v+28.0))+1.0)
+          beta_f=0.0065*exp(-0.02*(v+30.0))/(exp(-0.2*(V+30.0))+1.0)
+  
+         !concentration 
+          V_Ca=-82.3-13.0287*log(wo(1)) 
+          i_s=m(9)*wo(6)*wo(7)*(v-V_Ca)
+          
+          k(1)=-m(1)*i_s+m(3)*(m(2)-wo(1))
+          
+         !rec vars 
+          k(2)=alpha_x1*(1.0-wo(2))-beta_x1*wo(2)
+          k(3)=alpha_m*(1.0-wo(3))-beta_m*wo(3)
+          k(4)=alpha_h*(1.0-wo(4))-beta_h*wo(4)
+          k(5)=alpha_j*(1.0-wo(5))-beta_j*wo(5)
+          k(6)=alpha_d*(1.0-wo(6))-beta_d*wo(6)
+          k(7)=alpha_f*(1.0-wo(7))-beta_f*wo(7)
 
       endselect
 
@@ -122,10 +122,7 @@
         case(2)   !Mitchell-Shaeffer model
           Iint=v/modc(2)+w(1)/modc(1)*v**2*(v-1.0)
 
-        case(3)   !Rogers-McCulloch model  
-          Iint=modc(1)*v*(v-modc(4))*(1.0-v)-modc(2)*v*w(1)
-
-        case(4)   !Beeler-Reuter model
+        case(3)   !Beeler-Reuter model
           
           V_Ca=-82.3-13.0287*log(w(1))
 
@@ -138,6 +135,9 @@
 
           Iint=-(i_k1+i_x1+i_Na+i_s)
 
+         !currents are computed in uA/cm^2 in this model, whereas the 
+         !code runs with mA/cm^2
+          Iint = Iint*0.001
 
       endselect
 
