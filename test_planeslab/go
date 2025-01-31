@@ -1,7 +1,0 @@
-#!/bin/bash
-
-# run on terminal
-../src/exe.e
-
-# run in background
-#../src/exe.e > log.out &
