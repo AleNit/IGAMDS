@@ -1,5 +1,5 @@
 # IGAMDS
-Isogeometric solver for the monodomain model (electrophysiological reaction-diffusion system) over NURBS surfaces. The monodomain equation is integrated in space via a NURBS-based isogeometric method, in time via the semi-implicit Crank-Nicholson/Admas-Bashforth scheme. Derivatives over the surface are computed using the local curvilinear frame defined by the metric tensor. The associated ionic current model is advanced in time via a fourth-order Runge-Kutta scheme. Three possible ionic current models are available: Aliev-Panfilov, Rogers-McCulloch, Beeler-Reuter.
+Isogeometric solver for the monodomain model (electrophysiological reaction-diffusion system) over NURBS surfaces. The monodomain equation is integrated in space via a NURBS-based isogeometric method, in time via the semi-implicit Crank-Nicholson/Admas-Bashforth scheme. Derivatives over the surface are computed using the local curvilinear frame defined by the metric tensor. The associated ionic current model is advanced in time via a fourth-order Runge-Kutta scheme. Three possible ionic current models are available: Aliev-Panfilov (Aliev, R. R., & Panfilov, A. V. (1996). A simple two-variable model of cardiac excitation. Chaos, Solitons & Fractals, 7(3), 293-301.), Rogers-McCulloch (Rogers, J. M., & McCulloch, A. D. (1994). A collocation-Galerkin finite element model of cardiac action potential propagation. IEEE Transactions on Biomedical Engineering, 41(8), 743-757.), Beeler-Reuter (Beeler, G. W., & Reuter, H. (1977). Reconstruction of the action potential of ventricular myocardial fibres. The Journal of physiology, 268(1), 177-210.).
 
 # Developers
 Alessandro Nitti, Polytechnic University of Bari (https://scholar.google.it/citations?user=lv1V6-4AAAAJ&hl=it&oi=ao)  
@@ -41,19 +41,14 @@ Linear systems are solved via the MGMRES algorithm provided by John Burkardt, (B
    
 # How to run a test
 1. Create the desired NURBS surface and performs both h-refinement (element insertion) and p-refinement (degree elevation of basis functions) by running the script ./proproc/MAIN_<test_name>.m. This will generate the test folder with the related input files.  
-2. Insert the desired values of physical parameters and select the desired ionic current model via <test_name>/input/modelpar.in.  
-3. Prescribe the stimulation protocol by means of the file <test_name>/input/stim_prot.in.   
-4. Compile the ./src/ files via makefile    
-5. Run the test in the <test_name> folder  
+2. Prescibe the desired physical parameters, select the ionic current model and prescribe the stimulation protocol in the write-to-file section of the ./proproc/MAIN_<test_name>.m file.
+5. Compile the ./src/ files via makefile    
+6. Run the test in the <test_name> folder  
 
 # Organization of the repository
 ./preproc/: contains matlab pre-processing scripts that generate the test folder and the input files needed for the execution. It is used to design the Eulerian and Lagrangian grid.    
 ./postproc/: contains matlab post-processing scripts that allow to visualize the simulation output. Pressure/velocity/vorticity fields are displayed along with the body position.   
 ./src/: contains the makefile and all the routines to execute the program.  
-./test_planeslab/: contains the input files for the test case simulating the propagation of the action potential over a plane slab with the Aliev-Panfilov ionic current model. The time-traces of the action potential is verified against data provided in referece https://doi.org/10.1007/s00466-009-0434-z.  
-./test_spiral/: contains the input files for the test case simulating the trigger of a self-sustained spiral action potential. The Aliev-Panfilov ionic current model is used.  
-./test_cyl/: contains the input files for the test case simulating the propagation of an Aliev-Panfilov action potential over a cylindrical shell. The anisotropic diffusion occurs as a result of the surface geometry.
-./test_planeslab.mp4: tape showing the action potential contours of the plane slab test.
 ./test_cyl.mp4: tape showing the action potential propagation on a cylindrical shell.
 ./test_spiral.mp4: tape showing the trigger of a self-sustained spiral wave potential.
 ./test_planeslab.png: verification of the action potential time traces against literature data.
