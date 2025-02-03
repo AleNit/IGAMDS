@@ -701,7 +701,7 @@
         if (mod(ns,pint)==0) then       
 
           write(*,*)
-          write(*,"(1x,'step ',i8,', time = ',f9.5,' [ms]')") ns, time
+          write(*,"(1x,'step ',i8,', time = ',f6.4,' [ms]')") ns, time
           write(*,"(1x,'step exec. time = ',f9.5,' [s]')") t2-t1
 
           write(*,123) itt,resid
