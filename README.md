@@ -43,15 +43,20 @@ Install the HDF5 library (sudo apt get ), any release from 2015 on.
 Linear systems are solved via the MGMRES algorithm provided by John Burkardt, (Barrett R. et al., Templates for the Solution of Linear Systems: Building Blocks for Iterative Methods, SIAM, 1994. ISBN: 0898714710, LC: QA297.8.T45.)
    
 # How to run a test
-1. Create the desired NURBS surface and performs both h-refinement (element insertion) and p-refinement (degree elevation of basis functions) by running the script ./proproc/MAIN_<test_name>.m. This will generate the test folder with the related input files.  
+1. Run the Matlab script ./preproc/MAIN_<test_name>.m. This will create the NURBS surface for the chosen test and performs both h-refinement (element insertion) and p-refinement (degree elevation of basis functions). Afterwards, a test folder with the necessary input files will be generated.  
 2. Prescibe the desired physical parameters, select the ionic current model and prescribe the stimulation protocol in the write-to-file section of the ./proproc/MAIN_<test_name>.m file.
 5. Compile the ./src/ files via makefile    
-6. Run the test in the <test_name> folder  
+6. Run the Fortran executable generated in the <test_name> folder  
 
 # Organization of the repository
-./preproc/: contains matlab pre-processing scripts that generate the test folder and the input files needed for the execution. It is used to design/load the NURBS geometry, choose the membrane model and the stimulation protocol, specify the numerical setting and create the input files needed for the execution of the Fortran program.    
-./postproc/: contains matlab post-processing scripts that allow to visualize the simulation output. Action potential and ioni current can be displayed over the assigned surface.   
-./src/: contains the makefile and all the routines to execute the program.  
-./test_cyl.mp4: tape showing the action potential propagation on a cylindrical shell.
-./test_spiral.mp4: tape showing the trigger of a self-sustained spiral wave potential.
-./test_planeslab.png: verification of the action potential time traces against literature data.
+* ./preproc/: contains matlab pre-processing scripts that generate the test folder and the input files needed for the execution. It is used to design/load the NURBS geometry, choose the membrane model and the stimulation protocol, specify the numerical setting and create the input files needed for the execution of the Fortran program.
+  * ./preproc/IGA-quadrature-master/: contains pre-processing scripts used to compute location and weight of the quadrature points in case of patch-wise quadrature method.
+  * ./preproc/template_files/: contains the template files used to generate the working folder for the chosen test case.
+  * ./preproc/MAIN_<test_name>.m: script creating the working folder for the chosen test case.
+* ./postproc/: contains matlab post-processing scripts that allow to visualize the simulation output. Action potential and ionic current can be displayed over the assigned surface.
+  * ./postproc/frames/: directory where snapshots of the action potential configuration are saved as -png files.
+  * ./postproc/MAIN_<test_name>.m: plot the action potential or ionic current distribution over the simulated domain.
+* ./src/: contains the makefile and all the routines to execute the program.  
+* ./test_cyl.mp4: tape showing the action potential propagation on a cylindrical shell.
+* ./test_spiral.mp4: tape showing the trigger of a self-sustained spiral wave potential.
+* ./test_planeslab.png: verification of the action potential time traces against literature data.
